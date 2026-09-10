@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router-dom";
+
 export const HomePage = () => {
+  const navigate = useNavigate();
   return (
     <div className="flex min-h-dvh flex-col p-5">
       <header className="flex items-center justify-between">
@@ -13,7 +16,7 @@ export const HomePage = () => {
 
       <main className="mt-8">
         <section>
-          <p className="text-xs font-bold uppercase tracking-wider text-blue-600">
+          <p className="text-xs font-bold tracking-wider text-blue-600 uppercase">
             Buying in Dallas–Fort Worth
           </p>
           <h1 className="mt-2 font-serif text-[2.5rem] leading-[1.15]">
@@ -27,6 +30,7 @@ export const HomePage = () => {
             the house is really worth.
           </p>
           <button
+            onClick={() => navigate("/addresses")}
             type="button"
             className="mt-6 w-full rounded-full bg-yellow-400 py-4 text-lg font-bold transition-colors hover:bg-yellow-500"
           >
@@ -54,7 +58,7 @@ export const HomePage = () => {
       </main>
 
       <footer className="mt-auto rounded-2xl bg-blue-100 p-4">
-        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600">
+        <p className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-600 uppercase">
           <span
             className="h-2 w-2 rounded-full bg-amber-400"
             aria-hidden="true"
