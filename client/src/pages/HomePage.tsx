@@ -5,10 +5,10 @@ export const HomePage = () => {
   return (
     <div className="flex min-h-dvh flex-col p-5">
       <header className="flex items-center justify-between">
-        <span className="text-xl font-bold">instacashly</span>
+        <span className="text-lg font-bold">instacashly</span>
         <button
           type="button"
-          className="rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-200"
+          className="rounded-full bg-blue-100 px-4 py-2 text-xs font-medium text-custom-blue transition-colors hover:bg-blue-200"
         >
           How it works
         </button>
@@ -16,15 +16,15 @@ export const HomePage = () => {
 
       <main className="mt-8">
         <section>
-          <p className="text-xs font-bold tracking-wider text-blue-600 uppercase">
+          <p className="text-xs font-bold tracking-wider text-custom-blue uppercase">
             Buying in Dallas–Fort Worth
           </p>
-          <h1 className="mt-2 font-serif text-[2.5rem] leading-[1.15]">
+          <h1 className="mt-2 font-serif text-5xl leading-[1.15]">
             Photos in.
             <br />
             Cash range out.
           </h1>
-          <p className="mt-4 text-base leading-relaxed text-gray-600">
+          <p className="mt-4 text-sm leading-relaxed text-gray-600">
             Your number within 90 seconds. Upload the property however it looks
             right now — the more you show us, the closer the number gets to what
             the house is really worth.
@@ -32,27 +32,27 @@ export const HomePage = () => {
           <button
             onClick={() => navigate("/addresses")}
             type="button"
-            className="mt-6 w-full rounded-full bg-yellow-400 py-4 text-lg font-bold transition-colors hover:bg-yellow-500"
+            className="mt-6 w-full rounded-full bg-yellow-400 py-4 text-base font-bold transition-colors hover:bg-yellow-500"
           >
             Start with my address
           </button>
-          <p className="mt-4 text-center text-sm text-gray-500">
+          <p className="mt-4 text-center text-xs text-gray-500">
             No obligation. No showings. No fees.
           </p>
         </section>
 
         <ul className="mt-8 grid grid-cols-3 gap-2">
           <li className="rounded-2xl bg-gray-100 p-3">
-            <p className="text-2xl font-bold">90s</p>
-            <p className="mt-1 text-sm text-gray-500">to a number</p>
+            <p className="text-xl font-bold">90s</p>
+            <p className="mt-1 text-xs text-gray-500">to a number</p>
           </li>
           <li className="rounded-2xl bg-gray-100 p-3">
-            <p className="text-2xl font-bold">$0</p>
-            <p className="mt-1 text-sm text-gray-500">fees at closing</p>
+            <p className="text-xl font-bold">$0</p>
+            <p className="mt-1 text-xs text-gray-500">fees at closing</p>
           </li>
           <li className="rounded-2xl bg-gray-100 p-3">
-            <p className="text-2xl font-bold">4,118</p>
-            <p className="mt-1 text-sm text-gray-500">priced so far</p>
+            <p className="text-xl font-bold">4,118</p>
+            <p className="mt-1 text-xs text-gray-500">priced so far</p>
           </li>
         </ul>
       </main>
@@ -65,7 +65,7 @@ export const HomePage = () => {
           />
           Live · 7 offers sent today
         </p>
-        <ul className="mt-4 space-y-2 text-sm text-slate-700">
+        <ul className="mt-4 space-y-2 text-xs text-slate-700">
           <li className="flex justify-between">
             <span>Tasha in Saginaw</span>
             <span>$189,750</span>

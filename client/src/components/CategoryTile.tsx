@@ -26,7 +26,7 @@ export const CategoryTile = ({
     />
     {photos.length >= 2 && (
       <span className="absolute inset-0 flex flex-col items-center justify-center bg-black/25 font-bold text-white">
-        <span className="text-2xl leading-none">{photos.length}</span>
+        <span className="text-xl leading-none">{photos.length}</span>
         <span className="mt-0.5 text-xs font-medium">photos</span>
       </span>
     )}

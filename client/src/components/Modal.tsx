@@ -29,7 +29,7 @@ export const Modal = ({ open, onClose, title, children }: ModalProps) => {
     >
       <div className="max-h-[80vh] overflow-y-auto p-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
           <button
             type="button"
             onClick={onClose}

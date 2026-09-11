@@ -22,7 +22,7 @@ export const StepHeader = ({ current, total = 4, label }: StepHeaderProps) => {
         >
           <ArrowLeftIcon className="h-5 w-5" />
         </button>
-        <p className="text-xs font-bold tracking-wider text-blue-600 uppercase">
+        <p className="text-xs font-bold tracking-wider text-custom-blue uppercase">
           {label}
         </p>
       </div>

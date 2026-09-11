@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AddPhotosDialog } from "../components/AddPhotosDialog";
 import { CategoryPhotosDialog } from "../components/CategoryPhotosDialog";
 import { CategoryTile } from "../components/CategoryTile";
-import { PlusIcon } from "../components/icons";
+import { ArrowUpIcon, PlusIcon } from "../components/icons";
 import { StepHeader } from "../components/StepHeader";
 import { useValuation } from "../context/ValuationContext";
 import { dedupeFiles } from "../utils/photoFiles";
@@ -11,22 +11,20 @@ import type { UploadedPhoto } from "../types/photo";
 
 const TARGET_PHOTOS = 10;
 
+// MVP: fixed set of 11 categories — no custom categories for now (see
+// `handleAddCategory` / `AddPhotosDialog` below).
 const PHOTO_CATEGORIES = [
+  "Roof",
+  "Exterior paint",
+  "Windows",
   "Kitchen",
   "Bathrooms",
-  "Bedrooms",
-  "Living areas",
-  "Garage",
-  "Roof",
-  "Windows",
-  "Front yard",
-  "Backyard",
-  "Driveway",
   "Floors",
-  "Stairs",
-  "Exterior / siding",
-  "Deck or patio",
-  "Fireplace",
+  "Doors",
+  "Landscaping",
+  "Garage",
+  "Laundry room",
+  "Deck",
 ];
 
 export const PropertyPhotosPage = () => {
@@ -35,7 +33,7 @@ export const PropertyPhotosPage = () => {
   const { property } = useValuation();
 
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
-  const [categories, setCategories] = useState<string[]>(PHOTO_CATEGORIES);
+  const [categories] = useState<string[]>(PHOTO_CATEGORIES); // setter unused while custom categories are off
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [viewingCategory, setViewingCategory] = useState<string | null>(null);
 
@@ -48,9 +46,12 @@ export const PropertyPhotosPage = () => {
   const photosIn = (category: string) =>
     photos.filter((photo) => photo.category === category);
 
-  const handleAddCategory = (name: string) => {
-    setCategories((prev) => [...prev, name]);
-  };
+  // MVP: category list is fixed at PHOTO_CATEGORIES, so this (and the
+  // setter above) is unused for now. Re-enable together with the "Other"
+  // chip in AddPhotosDialog.
+  // const handleAddCategory = (name: string) => {
+  //   setCategories((prev) => [...prev, name]);
+  // };
 
   const handleAddPhotos = (files: File[], category: string) => {
     setPhotos((prev) => {
@@ -91,11 +92,11 @@ export const PropertyPhotosPage = () => {
       <StepHeader current={2} total={4} label="Step 2 of 4 · Photos" />
 
       <main className="mt-8">
-        <h1 className="font-serif text-[2rem] leading-[1.15]">
+        <h1 className="font-serif text-3xl leading-[1.15]">
           Add 10 photos of your property
         </h1>
 
-        <p className="mt-3 text-sm text-slate-600">
+        <p className="mt-3 text-xs text-slate-600">
           {property
             ? `${property.title} · ${property.subtitle}`
             : `Property #${addressId}`}{" "}
@@ -103,22 +104,22 @@ export const PropertyPhotosPage = () => {
           place.
         </p>
 
-        <ul className="text-md mt-6 flex flex-wrap gap-2">
+        <ul className="mt-6 flex flex-wrap gap-2 text-xs">
           {categories.map((category) => (
             <li
               key={category}
-              className="rounded-full bg-blue-200 px-4 py-2 text-slate-800"
+              className="rounded-full bg-blue-100 px-4 py-2 text-slate-800"
             >
               {category}
             </li>
           ))}
-          <li className="rounded-full bg-gray-200 px-4 py-2 text-gray-400">
+          <li className="rounded-full bg-gray-100 px-4 py-2 text-gray-400">
             … and anything broken
           </li>
         </ul>
 
         <div className="mt-6 rounded-2xl bg-blue-100 p-4">
-          <div className="flex items-center justify-between gap-2 text-base font-semibold text-slate-800">
+          <div className="flex items-center justify-between gap-2 text-sm font-semibold text-slate-800">
             <span>Every photo tightens the offer</span>
             <span className="text-slate-500">
               {Math.min(photos.length, TARGET_PHOTOS)} / {TARGET_PHOTOS}
@@ -139,7 +140,7 @@ export const PropertyPhotosPage = () => {
             />
           </div>
 
-          <p className="mt-3 text-sm text-slate-600">
+          <p className="mt-3 text-xs text-slate-600">
             {photos.length === 0
               ? "With no photos we can only quote from public records — a $30,000 range, and we assume the worst."
               : "Every room you show shrinks the guesswork — the range narrows and the number climbs."}
@@ -155,10 +156,10 @@ export const PropertyPhotosPage = () => {
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-yellow-400 text-slate-900">
             <PlusIcon className="h-6 w-6" />
           </span>
-          <span className="text-base font-semibold text-slate-900">
+          <span className="text-sm font-semibold text-slate-900">
             {atLimit ? "Photo limit reached" : "Tap to add photos"}
           </span>
-          <span className="text-sm text-slate-500">
+          <span className="text-xs text-slate-500">
             {atLimit
               ? "Delete a photo to add another"
               : photos.length === 0
@@ -186,12 +187,12 @@ export const PropertyPhotosPage = () => {
           </section>
         )}
 
-        <div className="mt-6 rounded-2xl bg-yellow-50 p-4">
+        <div className="mt-6 rounded-2xl bg-yellow-100 p-4">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-base font-bold text-slate-900">
+            <p className="text-sm font-bold text-slate-900">
               Property Photo Coverage
             </p>
-            <span className="text-lg font-bold text-slate-900">
+            <span className="text-base font-bold text-slate-900">
               {coveragePct}%
             </span>
           </div>
@@ -203,20 +204,34 @@ export const PropertyPhotosPage = () => {
             />
           </div>
 
-          <p className="mt-3 text-sm text-slate-600">
+          <p className="mt-3 text-xs text-slate-600">
             {remaining > 0
               ? `Add ${remaining} more photo${remaining === 1 ? "" : "s"} to improve your property condition estimate.`
               : "You've covered the whole place — that's plenty for a solid estimate."}
           </p>
         </div>
+        <div className="mt-6 flex items-center justify-center gap-4 rounded-3xl border-2 border-slate-900 p-4 transition-colors hover:bg-yellow-400">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-yellow-400">
+            <ArrowUpIcon className="h-5 w-5 text-slate-900" />
+          </span>
+          <div>
+            <p className="text-sm font-bold text-slate-900">
+              Got more than 10? Send them to us directly
+            </p>
+            <p className="mt-1 text-xs text-slate-600">
+              The first 10 go to the AI grader. Extras help our team confirm
+              condition.
+            </p>
+          </div>
+        </div>
       </main>
 
       <footer className="sticky bottom-0 -mx-5 mt-auto -mb-5 flex items-center justify-between gap-4 border-t border-gray-200 bg-white px-5 py-4">
         <div className="min-w-0">
-          <p className="text-base font-bold text-slate-900">
+          <p className="text-sm font-bold text-slate-900">
             {photos.length} photo{photos.length === 1 ? "" : "s"}
           </p>
-          <p className="truncate text-sm text-slate-500">
+          <p className="truncate text-xs text-slate-500">
             {canContinue
               ? "Roof and bathrooms move it most"
               : "Add at least one photo to continue"}
@@ -236,7 +251,7 @@ export const PropertyPhotosPage = () => {
         open={isDialogOpen}
         onClose={() => setDialogOpen(false)}
         categories={categories}
-        onAddCategory={handleAddCategory}
+        // onAddCategory={handleAddCategory}
         onAdd={handleAddPhotos}
         existingPhotos={photos}
         remainingSlots={remaining}

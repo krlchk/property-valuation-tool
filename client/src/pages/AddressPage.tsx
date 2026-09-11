@@ -148,9 +148,7 @@ export const AddressPage = () => {
       <StepHeader current={1} total={4} label="Step 1 of 4 · Address" />
 
       <main className="mt-8">
-        <h1 className="font-serif text-[2rem] leading-[1.15]">
-          Which property?
-        </h1>
+        <h1 className="font-serif text-3xl leading-[1.15]">Which property?</h1>
 
         <section
           aria-label="Address search"
@@ -172,7 +170,7 @@ export const AddressPage = () => {
                 placeholder="Start typing an address"
                 value={query}
                 onChange={handleSearch}
-                className="w-full text-lg text-gray-900 outline-none placeholder:text-gray-400"
+                className="w-full text-base text-gray-900 outline-none placeholder:text-gray-400"
               />
             </div>
           </form>
@@ -203,7 +201,7 @@ export const AddressPage = () => {
                   <span className="block font-semibold text-gray-900">
                     {address.title}
                   </span>
-                  <span className="mt-0.5 block text-sm text-gray-500">
+                  <span className="mt-0.5 block text-xs text-gray-500">
                     {address.subtitle}
                   </span>
                 </button>
@@ -211,7 +209,7 @@ export const AddressPage = () => {
             ))}
 
             {visibleMatches.length === 0 && (
-              <li className="rounded-b-2xl border-t border-gray-100 bg-white px-4 py-6 text-center text-sm text-gray-500">
+              <li className="rounded-b-2xl border-t border-gray-100 bg-white px-4 py-6 text-center text-xs text-gray-500">
                 No matches. Check the spelling or try a nearby street.
               </li>
             )}
@@ -225,7 +223,7 @@ export const AddressPage = () => {
                   canShowMore ? count + PAGE_SIZE : PAGE_SIZE,
                 )
               }
-              className="mt-2 w-full py-2 text-sm font-medium text-blue-600 transition-colors hover:text-blue-700"
+              className="mt-2 w-full cursor-pointer py-2 text-xs font-medium text-custom-blue"
             >
               {canShowMore
                 ? `Show ${Math.min(PAGE_SIZE, matches.length - visibleCount)} more`
@@ -233,7 +231,7 @@ export const AddressPage = () => {
             </button>
           )}
 
-          <p className="mt-3 px-1 text-sm text-slate-600">
+          <p className="mt-3 px-1 text-xs text-slate-600">
             Pick the exact match so we price the right parcel.
           </p>
         </section>
