@@ -1,92 +1,108 @@
 import { useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeftIcon, MapPinIcon } from "../components/icons";
-import { StepProgress } from "../components/StepProgress";
+import { MapPinIcon } from "../components/icons";
+import { StepHeader } from "../components/StepHeader";
 import { useValuation } from "../context/ValuationContext";
-
-type Address = {
-  title: string;
-  subtitle: string;
-};
+import type { Address } from "../types/address";
 
 const addressesArrayMock: Address[] = [
   {
+    id: "1",
     title: "3412 Kingsbury Ave",
     subtitle: "Fort Worth, TX 76110",
   },
   {
+    id: "2",
     title: "3412 Kingsbury Ave S",
     subtitle: "Arlington, TX 76015",
   },
   {
+    id: "3",
     title: "1204 Main St",
     subtitle: "Dallas, TX 75202",
   },
   {
+    id: "4",
     title: "850 Congress Ave",
     subtitle: "Austin, TX 78701",
   },
   {
+    id: "5",
     title: "1000 Louisiana St",
     subtitle: "Houston, TX 77002",
   },
   {
+    id: "6",
     title: "500 E San Antonio St",
     subtitle: "El Paso, TX 79901",
   },
   {
+    id: "7",
     title: "300 S Saint Marys St",
     subtitle: "San Antonio, TX 78205",
   },
   {
+    id: "8",
     title: "400 Austin Ave",
     subtitle: "Waco, TX 76701",
   },
   {
+    id: "9",
     title: "900 8th St",
     subtitle: "Wichita Falls, TX 76301",
   },
   {
+    id: "10",
     title: "220 N Main St",
     subtitle: "Fort Worth, TX 76102",
   },
   {
+    id: "11",
     title: "1500 Marilla St",
     subtitle: "Dallas, TX 75201",
   },
   {
+    id: "12",
     title: "111 E Pecan St",
     subtitle: "San Antonio, TX 78205",
   },
   {
+    id: "13",
     title: "700 Lavaca St",
     subtitle: "Austin, TX 78701",
   },
   {
+    id: "14",
     title: "1200 Smith St",
     subtitle: "Houston, TX 77002",
   },
   {
+    id: "15",
     title: "600 Camp St",
     subtitle: "Fort Worth, TX 76102",
   },
   {
+    id: "16",
     title: "200 W Abram St",
     subtitle: "Arlington, TX 76010",
   },
   {
+    id: "17",
     title: "300 E Main St",
     subtitle: "Arlington, TX 76010",
   },
   {
+    id: "18",
     title: "500 Taylor St",
     subtitle: "Fort Worth, TX 76102",
   },
   {
+    id: "19",
     title: "1401 McKinney St",
     subtitle: "Houston, TX 77010",
   },
   {
+    id: "20",
     title: "600 Congress Ave",
     subtitle: "Austin, TX 78701",
   },
@@ -119,32 +135,17 @@ export const AddressPage = () => {
   };
 
   const handleSelect = (address: Address) => {
-    setQuery(address.title);
-    setVisibleCount(PAGE_SIZE);
     setProperty({
-      subtitle: address.subtitle,
+      id: address.id,
       title: address.title,
+      subtitle: address.subtitle,
     });
+    navigate(`/addresses/${address.id}/photos`);
   };
 
   return (
     <div className="flex min-h-dvh flex-col p-5">
-      <header>
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            aria-label="Go back"
-            className="-ml-1 rounded-full p-1 text-gray-900 transition-colors hover:bg-gray-100"
-          >
-            <ArrowLeftIcon className="h-5 w-5" />
-          </button>
-          <p className="text-xs font-bold tracking-wider text-blue-600 uppercase">
-            Step 1 of 4 · Address
-          </p>
-        </div>
-        <StepProgress current={1} total={4} className="mt-2" />
-      </header>
+      <StepHeader current={1} total={4} label="Step 1 of 4 · Address" />
 
       <main className="mt-8">
         <h1 className="font-serif text-[2rem] leading-[1.15]">
@@ -191,7 +192,7 @@ export const AddressPage = () => {
             </li>
 
             {visibleMatches.map((address, index) => (
-              <li key={`${address.title} ${address.subtitle}`}>
+              <li key={address.id}>
                 <button
                   type="button"
                   onClick={() => handleSelect(address)}
