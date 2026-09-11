@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import {
   AddressPage,
+  AnalyzingPage,
   ContactPage,
   HomePage,
   PropertyPhotosPage,
@@ -15,6 +16,7 @@ const App = () => (
       path="/addresses/:addressId/photos"
     />
     <Route element={<ContactPage />} path="/addresses/:addressId/contact" />
+    <Route element={<AnalyzingPage />} path="/addresses/:addressId/analyzing" />
   </Routes>
 );
 

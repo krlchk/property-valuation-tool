@@ -4,6 +4,7 @@ import { AddPhotosDialog } from "../components/AddPhotosDialog";
 import { CategoryPhotosDialog } from "../components/CategoryPhotosDialog";
 import { CategoryTile } from "../components/CategoryTile";
 import { ArrowUpIcon, PlusIcon } from "../components/icons";
+import { ProgressBar } from "../components/ProgressBar";
 import { StepHeader } from "../components/StepHeader";
 import { useValuation } from "../context/ValuationContext";
 import { dedupeFiles } from "../utils/photoFiles";
@@ -198,12 +199,7 @@ export const PropertyPhotosPage = () => {
             </span>
           </div>
 
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white">
-            <div
-              className="h-full rounded-full bg-yellow-400 transition-[width] duration-300"
-              style={{ width: `${coveragePct}%` }}
-            />
-          </div>
+          <ProgressBar percent={coveragePct} className="mt-3" />
 
           <p className="mt-3 text-xs text-slate-600">
             {remaining > 0

@@ -61,7 +61,7 @@ export const ContactPage = () => {
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    navigate(`/addresses/${addressId}/offer`);
+    navigate(`/addresses/${addressId}/analyzing`);
   };
 
   return (
