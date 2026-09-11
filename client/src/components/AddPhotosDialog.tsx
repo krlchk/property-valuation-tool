@@ -128,7 +128,7 @@ export const AddPhotosDialog = ({
       </p>
       {remainingSlots > 0 ? (
         <label className="mt-2 flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-dashed border-gray-300 p-6 text-center transition-colors hover:bg-gray-50">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-custom-yellow">
             <PlusIcon className="h-5 w-5" />
           </span>
           <span className="text-xs text-slate-600">
@@ -163,7 +163,7 @@ export const AddPhotosDialog = ({
           type="button"
           onClick={handleSubmit}
           disabled={files.length === 0 || !category}
-          className="flex-1 rounded-full bg-yellow-400 py-2.5 text-xs font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 rounded-full bg-custom-yellow py-2.5 text-xs font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {files.length > 0
             ? `Add ${files.length} ${files.length === 1 ? "photo" : "photos"}`

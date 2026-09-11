@@ -3,3 +3,4 @@ export { AddressPage } from "./AddressPage";
 export { PropertyPhotosPage } from "./PropertyPhotosPage";
 export { ContactPage } from "./ContactPage";
 export { AnalyzingPage } from "./AnalyzingPage";
+export { OfferPage } from "./OfferPage";

@@ -21,7 +21,7 @@ export const StepProgress = ({
       <span
         key={index}
         className={`h-1 flex-1 rounded-full ${
-          index < current ? "bg-yellow-400" : "bg-gray-200"
+          index < current ? "bg-custom-yellow" : "bg-gray-200"
         }`}
       />
     ))}

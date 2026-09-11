@@ -15,7 +15,7 @@ type Field = "name" | "phone" | "email";
 export const ContactPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property, photoCount } = useValuation();
+  const { property, photos } = useValuation();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -78,9 +78,9 @@ export const ContactPage = () => {
         </h1>
 
         <p className="mt-3 text-xs text-slate-600">
-          {photoCount} photo{photoCount === 1 ? "" : "s"} of {locationLabel} are
-          in. Your offer is ready on the next page. This is just so we can reach
-          you about it.
+          {photos.length} photo{photos.length === 1 ? "" : "s"} of{" "}
+          {locationLabel} are in. Your offer is ready on the next page. This is
+          just so we can reach you about it.
         </p>
 
         <div className="mt-6 space-y-3 rounded-2xl bg-blue-100 p-4">
@@ -149,7 +149,7 @@ export const ContactPage = () => {
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="w-full rounded-full bg-yellow-400 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-[#E8F4FD] disabled:opacity-50"
+          className="w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-[#E8F4FD] disabled:opacity-50"
         >
           See my offer
         </button>

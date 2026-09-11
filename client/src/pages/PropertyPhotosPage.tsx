@@ -31,9 +31,8 @@ const PHOTO_CATEGORIES = [
 export const PropertyPhotosPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property, setPhotoCount } = useValuation();
+  const { property, photos, setPhotos } = useValuation();
 
-  const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [categories] = useState<string[]>(PHOTO_CATEGORIES); // setter unused while custom categories are off
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [viewingCategory, setViewingCategory] = useState<string | null>(null);
@@ -69,7 +68,6 @@ export const PropertyPhotosPage = () => {
 
     const next = [...photos, ...additions];
     setPhotos(next);
-    setPhotoCount(next.length);
   };
 
   const handleDeletePhoto = (id: string) => {
@@ -78,7 +76,6 @@ export const PropertyPhotosPage = () => {
 
     const next = photos.filter((photo) => photo.id !== id);
     setPhotos(next);
-    setPhotoCount(next.length);
 
     if (viewingCategory && !next.some((p) => p.category === viewingCategory)) {
       setViewingCategory(null);
@@ -131,11 +128,11 @@ export const PropertyPhotosPage = () => {
           <div className="relative mt-3 h-3.5">
             <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white" />
             <div
-              className="absolute top-1/2 left-0 h-1.5 -translate-y-1/2 rounded-full bg-yellow-400 transition-[width] duration-300"
+              className="absolute top-1/2 left-0 h-1.5 -translate-y-1/2 rounded-full bg-custom-yellow transition-[width] duration-300"
               style={{ width: `${progress * 100}%` }}
             />
             <div
-              className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-yellow-400 shadow-sm transition-[left] duration-300"
+              className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-custom-yellow shadow-sm transition-[left] duration-300"
               style={{
                 left: `clamp(0.4375rem, ${progress * 100}%, calc(100% - 0.4375rem))`,
               }}
@@ -155,7 +152,7 @@ export const PropertyPhotosPage = () => {
           disabled={atLimit}
           className="mt-6 flex w-full flex-col items-center gap-3 rounded-2xl bg-gray-50 p-6 text-center transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-yellow-400 text-slate-900">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-custom-yellow text-slate-900">
             <PlusIcon className="h-6 w-6" />
           </span>
           <span className="text-sm font-semibold text-slate-900">
@@ -207,8 +204,8 @@ export const PropertyPhotosPage = () => {
               : "You've covered the whole place — that's plenty for a solid estimate."}
           </p>
         </div>
-        <div className="mt-6 flex items-center justify-center gap-4 rounded-3xl border-2 border-slate-900 p-4 transition-colors hover:bg-yellow-400">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-yellow-400">
+        <div className="mt-6 flex items-center justify-center gap-4 rounded-3xl border-2 border-slate-900 p-4 transition-colors hover:bg-custom-yellow">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-custom-yellow">
             <ArrowUpIcon className="h-5 w-5 text-slate-900" />
           </span>
           <div>
@@ -238,7 +235,7 @@ export const PropertyPhotosPage = () => {
           type="button"
           onClick={() => navigate(`/addresses/${addressId}/contact`)}
           disabled={!canContinue}
-          className="shrink-0 rounded-full bg-yellow-400 px-6 py-3 font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded-full bg-custom-yellow px-6 py-3 font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Continue
         </button>

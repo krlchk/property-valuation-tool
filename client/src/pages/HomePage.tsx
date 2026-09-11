@@ -32,7 +32,7 @@ export const HomePage = () => {
           <button
             onClick={() => navigate("/addresses")}
             type="button"
-            className="mt-6 w-full rounded-full bg-yellow-400 py-4 text-base font-bold transition-colors hover:bg-yellow-500"
+            className="mt-6 w-full rounded-full bg-custom-yellow py-4 text-base font-bold transition-colors hover:bg-yellow-500"
           >
             Start with my address
           </button>

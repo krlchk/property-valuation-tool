@@ -4,6 +4,7 @@ import {
   AnalyzingPage,
   ContactPage,
   HomePage,
+  OfferPage,
   PropertyPhotosPage,
 } from "./pages";
 
@@ -17,6 +18,7 @@ const App = () => (
     />
     <Route element={<ContactPage />} path="/addresses/:addressId/contact" />
     <Route element={<AnalyzingPage />} path="/addresses/:addressId/analyzing" />
+    <Route element={<OfferPage />} path="/addresses/:addressId/offer" />
   </Routes>
 );
 

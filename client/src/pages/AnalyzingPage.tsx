@@ -25,7 +25,7 @@ const formatCountdown = (remainingMs: number) => {
 export const AnalyzingPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property, photoCount } = useValuation();
+  const { property, photos } = useValuation();
 
   const [elapsedMs, setElapsedMs] = useState(0);
 
@@ -66,7 +66,7 @@ export const AnalyzingPage = () => {
         <div className="rounded-2xl bg-blue-100 p-4">
           <div className="flex items-baseline justify-between gap-2">
             <p className="font-mono text-xs font-bold tracking-wider text-slate-600 uppercase">
-              Reading {photoCount} photo{photoCount === 1 ? "" : "s"}
+              Reading {photos.length} photo{photos.length === 1 ? "" : "s"}
             </p>
             <p className="font-mono text-lg font-bold text-slate-900">
               {formatCountdown(remainingMs)}
