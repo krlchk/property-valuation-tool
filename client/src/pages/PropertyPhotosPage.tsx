@@ -30,7 +30,7 @@ const PHOTO_CATEGORIES = [
 export const PropertyPhotosPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property } = useValuation();
+  const { property, setPhotoCount } = useValuation();
 
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [categories] = useState<string[]>(PHOTO_CATEGORIES); // setter unused while custom categories are off
@@ -54,21 +54,21 @@ export const PropertyPhotosPage = () => {
   // };
 
   const handleAddPhotos = (files: File[], category: string) => {
-    setPhotos((prev) => {
-      const room = Math.max(TARGET_PHOTOS - prev.length, 0);
-      const accepted = dedupeFiles(files, prev).slice(0, room);
+    const room = Math.max(TARGET_PHOTOS - photos.length, 0);
+    const accepted = dedupeFiles(files, photos).slice(0, room);
 
-      const additions: UploadedPhoto[] = accepted.map((file) => ({
-        id: crypto.randomUUID(),
-        url: URL.createObjectURL(file),
-        name: file.name,
-        size: file.size,
-        lastModified: file.lastModified,
-        category,
-      }));
+    const additions: UploadedPhoto[] = accepted.map((file) => ({
+      id: crypto.randomUUID(),
+      url: URL.createObjectURL(file),
+      name: file.name,
+      size: file.size,
+      lastModified: file.lastModified,
+      category,
+    }));
 
-      return [...prev, ...additions];
-    });
+    const next = [...photos, ...additions];
+    setPhotos(next);
+    setPhotoCount(next.length);
   };
 
   const handleDeletePhoto = (id: string) => {
@@ -77,6 +77,7 @@ export const PropertyPhotosPage = () => {
 
     const next = photos.filter((photo) => photo.id !== id);
     setPhotos(next);
+    setPhotoCount(next.length);
 
     if (viewingCategory && !next.some((p) => p.category === viewingCategory)) {
       setViewingCategory(null);
@@ -239,7 +240,7 @@ export const PropertyPhotosPage = () => {
         </div>
         <button
           type="button"
-          onClick={() => navigate(`/addresses/${addressId}/details`)}
+          onClick={() => navigate(`/addresses/${addressId}/contact`)}
           disabled={!canContinue}
           className="shrink-0 rounded-full bg-yellow-400 px-6 py-3 font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
         >

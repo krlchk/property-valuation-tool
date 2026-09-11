@@ -1,5 +1,10 @@
 import { Route, Routes } from "react-router-dom";
-import { AddressPage, HomePage, PropertyPhotosPage } from "./pages";
+import {
+  AddressPage,
+  ContactPage,
+  HomePage,
+  PropertyPhotosPage,
+} from "./pages";
 
 const App = () => (
   <Routes>
@@ -9,6 +14,7 @@ const App = () => (
       element={<PropertyPhotosPage />}
       path="/addresses/:addressId/photos"
     />
+    <Route element={<ContactPage />} path="/addresses/:addressId/contact" />
   </Routes>
 );
 

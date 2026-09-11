@@ -6,6 +6,8 @@ export type PropertyData = Address;
 export type ValuationContextType = {
   property: PropertyData | null;
   setProperty: (property: PropertyData) => void;
+  photoCount: number;
+  setPhotoCount: (count: number) => void;
 };
 
 export const ValuationContext = createContext<ValuationContextType | undefined>(
