@@ -1,19 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { SmileIcon } from "../components/icons";
+import {
+  ADJUSTMENT_AMOUNT,
+  CONDITION_ADJUSTMENT_PCT,
+  ESTIMATED_VALUE,
+  STARTING_VALUE,
+  formatCurrency,
+} from "../utils/estimate";
 
 const OFFER_VALIDITY_DAYS = 14;
-
-// TODO: mock — the starting value will come from comps/public records, and
-// the condition adjustment will sum from the per-room AI photo analysis
-// (once that UI exists on PropertyPhotosPage). Wire them together then;
-// for now the estimate is just derived from these two flat placeholders.
-const STARTING_VALUE = 500_000;
-const CONDITION_ADJUSTMENT_PCT = -7.75;
-const ADJUSTMENT_AMOUNT = Math.round(
-  STARTING_VALUE * (CONDITION_ADJUSTMENT_PCT / 100),
-);
-const ESTIMATED_VALUE = STARTING_VALUE + ADJUSTMENT_AMOUNT;
 
 const DETAIL_ROWS = [
   { label: "Closing date", value: "About 30 days" },
@@ -30,11 +26,6 @@ const RECENT_ACCEPTANCES = [
   { name: "Sam", city: "Euless", minutesAgo: 31 },
 ];
 const ACCEPTANCE_ROTATION_MS = 5_000;
-
-const formatCurrency = (value: number) => {
-  const sign = value < 0 ? "-" : "";
-  return `${sign}$${Math.abs(value).toLocaleString("en-US")}`;
-};
 
 export const OfferPage = () => {
   const navigate = useNavigate();
@@ -152,18 +143,22 @@ export const OfferPage = () => {
 
         <button
           type="button"
+          onClick={() => navigate(`/addresses/${addressId}/offer/accepted`)}
           className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500"
         >
           Accept this estimate
         </button>
 
-        {/* TODO: wire up — explains how the estimate was priced. */}
-        <div className="mt-3 flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm text-slate-900">
+        <button
+          type="button"
+          onClick={() => navigate(`/addresses/${addressId}/offer/breakdown`)}
+          className="mt-3 flex w-full items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm text-slate-900 transition-colors hover:bg-gray-100"
+        >
           <span>Why this number?</span>
           <span aria-hidden="true" className="text-custom-blue">
             →
           </span>
-        </div>
+        </button>
 
         <div className="mt-3 flex items-center justify-center gap-3 rounded-2xl border border-gray-200 p-4">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-custom-blue">
