@@ -27,13 +27,13 @@ export const FormField = ({
 }: FormFieldProps) => (
   <div>
     <div
-      className={`rounded-2xl bg-white px-4 py-3 ${
-        error ? "ring-2 ring-red-400" : ""
+      className={`rounded-2xl border bg-white px-4 py-3 ${
+        error ? "border-red-400" : "border-gray-300"
       }`}
     >
       <label
         htmlFor={id}
-        className="block text-[9px] font-semibold tracking-wider text-custom-blue uppercase"
+        className="block text-label font-semibold tracking-wider text-custom-blue uppercase"
       >
         {label}
       </label>
@@ -51,7 +51,7 @@ export const FormField = ({
         onBlur={onBlur}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className="mt-1 w-full text-sm text-slate-900 outline-none placeholder:text-sm placeholder:text-gray-400"
+        className="mt-1 w-full text-base text-slate-900 outline-none placeholder:text-base placeholder:text-gray-400"
       />
     </div>
     {error && (

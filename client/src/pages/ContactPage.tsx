@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CheckIcon } from "../components/icons";
 import { FormField } from "../components/FormField";
-import { StepHeader } from "../components/StepHeader";
+import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -65,25 +65,23 @@ export const ContactPage = () => {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col p-5">
-      <StepHeader
-        current={4}
-        total={4}
-        label="Step 4 of 4 · Who to send it to"
-      />
-
-      <main className="mt-8">
-        <h1 className="font-serif text-3xl leading-[1.15]">
+    <StepsWrapper
+      stepHeaderCurrent={4}
+      stepHeaderTotal={4}
+      stepHeaderLabel="Step 4 of 4 · Contact"
+    >
+      <div className="mt-5">
+        <h1 className="font-serif text-hero leading-[1.15]">
           Where should the offer go?
         </h1>
 
-        <p className="mt-3 text-xs text-slate-600">
+        <p className="mt-3 text-body-sm text-slate-600">
           {photos.length} photo{photos.length === 1 ? "" : "s"} of{" "}
           {locationLabel} are in. Your offer is ready on the next page. This is
           just so we can reach you about it.
         </p>
 
-        <div className="mt-6 space-y-3 rounded-2xl bg-blue-100 p-4">
+        <div className="mt-6 space-y-3">
           <FormField
             id="fullName"
             label="Full name"
@@ -142,23 +140,21 @@ export const ContactPage = () => {
             <span className="text-custom-blue underline">Privacy Policy</span>.
           </span>
         </label>
-      </main>
 
-      <footer className="sticky bottom-0 -mx-5 mt-auto -mb-5 border-gray-200 px-5 py-4">
         <button
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-[#E8F4FD] disabled:opacity-50"
+          className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-[#E8F4FD] disabled:opacity-50"
         >
           See my offer
         </button>
         {!canSubmit && (
           <p className="mt-2 text-center text-xs text-slate-500">
-            Name, phone, email, and the terms box below.
+            Name, phone, email, and the terms box.
           </p>
         )}
-      </footer>
-    </div>
+      </div>
+    </StepsWrapper>
   );
 };
