@@ -3,7 +3,16 @@ import { createProperty } from "./property.service";
 
 export const createPropertyController = async (req: Request, res: Response) => {
   try {
-    const { addressLine1, city, state, postalCode } = req.body;
+    const {
+      addressLine1,
+      city,
+      state,
+      postalCode,
+      latitude,
+      longitude,
+      addressProvider,
+      providerPlaceId,
+    } = req.body;
     if (!addressLine1 || !city || !state || !postalCode) {
       return res.status(400).json({
         error: "Missing required property fields",
@@ -14,6 +23,10 @@ export const createPropertyController = async (req: Request, res: Response) => {
       city,
       state,
       postalCode,
+      latitude,
+      longitude,
+      addressProvider,
+      providerPlaceId,
     });
     return res.status(201).json(property);
   } catch (error) {

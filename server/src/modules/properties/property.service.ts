@@ -11,6 +11,11 @@ export const createProperty = async (
       city: input.city,
       state: input.state,
       postal_code: input.postalCode,
+
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
+      address_provider: input.addressProvider ?? null,
+      provider_place_id: input.providerPlaceId ?? null,
     })
     .select()
     .single();
@@ -25,6 +30,11 @@ export const createProperty = async (
     city: data.city,
     state: data.state,
     postalCode: data.postal_code,
+
+    latitude: data.latitude,
+    longitude: data.longitude,
+    addressProvider: data.address_provider,
+    providerPlaceId: data.provider_place_id,
 
     squareFeet: data.square_feet,
     bedrooms: data.bedrooms,

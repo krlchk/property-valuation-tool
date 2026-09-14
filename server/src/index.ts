@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import type { HealthResponse } from "@pvt/shared";
 import { propertyRouter } from "./modules/properties/property.routes";
+import { addressRouter } from "./modules/addresses/address.routes";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/properties", propertyRouter);
+app.use("/api/addresses", addressRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
