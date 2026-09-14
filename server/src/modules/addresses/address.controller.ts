@@ -3,6 +3,7 @@ import {
   getNormalizedAddress,
   IncompleteAddressError,
   PlaceNotFoundError,
+  reverseGeocode,
   searchAddresses,
 } from "./address.service";
 
@@ -16,6 +17,46 @@ export const searchAddressesController = async (req: Request, res: Response) => 
     console.error("Failed to search addresses:", error);
     return res.status(500).json({
       error: "Failed to search addresses",
+    });
+  }
+};
+
+const MIN_LATITUDE = -90;
+const MAX_LATITUDE = 90;
+const MIN_LONGITUDE = -180;
+const MAX_LONGITUDE = 180;
+
+export const reverseGeocodeController = async (req: Request, res: Response) => {
+  const latitude = Number(req.query.lat);
+  const longitude = Number(req.query.lng);
+
+  const isValidCoordinates =
+    typeof req.query.lat === "string" &&
+    typeof req.query.lng === "string" &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    latitude >= MIN_LATITUDE &&
+    latitude <= MAX_LATITUDE &&
+    longitude >= MIN_LONGITUDE &&
+    longitude <= MAX_LONGITUDE;
+
+  if (!isValidCoordinates) {
+    return res.status(400).json({ error: "Invalid latitude/longitude" });
+  }
+
+  try {
+    const address = await reverseGeocode(latitude, longitude);
+    return res.status(200).json(address);
+  } catch (error) {
+    if (error instanceof PlaceNotFoundError) {
+      return res.status(404).json({ error: error.message });
+    }
+    if (error instanceof IncompleteAddressError) {
+      return res.status(422).json({ error: error.message });
+    }
+    console.error("Failed to reverse geocode location:", error);
+    return res.status(500).json({
+      error: "Failed to reverse geocode location",
     });
   }
 };

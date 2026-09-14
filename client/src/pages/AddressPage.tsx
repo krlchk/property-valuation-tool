@@ -1,14 +1,20 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import type { AddressSuggestion } from "@pvt/shared";
+import type { AddressSuggestion, CreatePropertyRequest, NormalizedAddress } from "@pvt/shared";
 import { MapPinIcon } from "../components/icons";
 import { useValuation } from "../context/ValuationContext";
 import { StepsWrapper } from "../components/StepsWrapper";
-import { createProperty, getAddressDetails, searchAddresses } from "../services/api";
+import {
+  createProperty,
+  getAddressDetails,
+  reverseGeocodeAddress,
+  searchAddresses,
+} from "../services/api";
 
 const PAGE_SIZE = 4;
 const MIN_QUERY_LENGTH = 3;
 const SEARCH_DEBOUNCE_MS = 300;
+const CURRENT_LOCATION_ID = "current-location";
 
 const splitLabel = (label: string) => {
   const commaIndex = label.indexOf(",");
@@ -18,6 +24,17 @@ const splitLabel = (label: string) => {
     secondary: label.slice(commaIndex + 1).trim(),
   };
 };
+
+const toCreatePropertyInput = (normalized: NormalizedAddress): CreatePropertyRequest => ({
+  addressLine1: normalized.addressLine1,
+  city: normalized.city,
+  state: normalized.state,
+  postalCode: normalized.postalCode,
+  latitude: normalized.latitude,
+  longitude: normalized.longitude,
+  addressProvider: normalized.provider,
+  providerPlaceId: normalized.providerPlaceId,
+});
 
 export const AddressPage = () => {
   const navigate = useNavigate();
@@ -90,29 +107,66 @@ export const AddressPage = () => {
     setVisibleCount(PAGE_SIZE);
   };
 
+  const selectNormalizedAddress = async (normalized: NormalizedAddress) => {
+    const property = await createProperty(toCreatePropertyInput(normalized));
+    setProperty(property);
+    navigate(`/addresses/${property.id}/photos`);
+  };
+
   const handleSelect = async (suggestion: AddressSuggestion) => {
     setSelectError(null);
     setSubmittingId(suggestion.id);
     try {
       const normalized = await getAddressDetails(suggestion.id);
-      const property = await createProperty({
-        addressLine1: normalized.addressLine1,
-        city: normalized.city,
-        state: normalized.state,
-        postalCode: normalized.postalCode,
-        latitude: normalized.latitude,
-        longitude: normalized.longitude,
-        addressProvider: normalized.provider,
-        providerPlaceId: normalized.providerPlaceId,
-      });
-      setProperty(property);
-      navigate(`/addresses/${property.id}/photos`);
+      await selectNormalizedAddress(normalized);
     } catch (error) {
       console.error("Failed to select address:", error);
       setSelectError("Couldn't select that address. Please try again.");
     } finally {
       setSubmittingId(null);
     }
+  };
+
+  const handleUseCurrentLocation = () => {
+    setSelectError(null);
+
+    if (!("geolocation" in navigator)) {
+      setSelectError("Location isn't supported on this device. Please search instead.");
+      return;
+    }
+
+    setSubmittingId(CURRENT_LOCATION_ID);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        void (async () => {
+          try {
+            const normalized = await reverseGeocodeAddress(
+              position.coords.latitude,
+              position.coords.longitude,
+            );
+            await selectNormalizedAddress(normalized);
+          } catch (error) {
+            console.error("Failed to use current location:", error);
+            setSelectError(
+              "Couldn't find an address at your location. Please search instead.",
+            );
+          } finally {
+            setSubmittingId(null);
+          }
+        })();
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        setSelectError(
+          error.code === error.PERMISSION_DENIED
+            ? "Location access denied. Please search for your address instead."
+            : "Couldn't get your location. Please search for your address instead.",
+        );
+        setSubmittingId(null);
+      },
+      { enableHighAccuracy: false, timeout: 10000 },
+    );
   };
 
   return (
@@ -152,13 +206,17 @@ export const AddressPage = () => {
           <li>
             <button
               type="button"
-              className="flex w-full items-center gap-3 rounded-t-2xl bg-gray-50 px-4 py-3 text-left text-body-sm font-semibold text-gray-900 transition-colors hover:bg-gray-100"
+              onClick={handleUseCurrentLocation}
+              disabled={submittingId !== null}
+              className="flex w-full items-center gap-3 rounded-t-2xl bg-gray-50 px-4 py-3 text-left text-body-sm font-semibold text-gray-900 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span
                 className="h-2.5 w-2.5 shrink-0 rounded-full bg-amber-400"
                 aria-hidden="true"
               />
-              Use my current location
+              {submittingId === CURRENT_LOCATION_ID
+                ? "Locating…"
+                : "Use my current location"}
             </button>
           </li>
 

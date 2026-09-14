@@ -2,6 +2,7 @@ import type { AddressSuggestion, NormalizedAddress } from "@pvt/shared";
 
 const PLACES_AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete";
 const PLACES_DETAILS_URL = "https://places.googleapis.com/v1/places";
+const GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
 const MIN_QUERY_LENGTH = 3;
 
 export class PlaceNotFoundError extends Error {}
@@ -145,4 +146,45 @@ export const getNormalizedAddress = async (
     provider: "google",
     providerPlaceId: placeId,
   };
+};
+
+type GoogleGeocodeResponse = {
+  status: string;
+  results?: Array<{ place_id: string }>;
+};
+
+export const reverseGeocode = async (
+  latitude: number,
+  longitude: number,
+): Promise<NormalizedAddress> => {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing GOOGLE_MAPS_API_KEY environment variable");
+  }
+
+  const url = new URL(GEOCODE_URL);
+  url.searchParams.set("latlng", `${latitude},${longitude}`);
+  url.searchParams.set("key", apiKey);
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Google Geocoding API request failed: ${response.status}`);
+  }
+
+  const data = (await response.json()) as GoogleGeocodeResponse;
+
+  if (data.status === "ZERO_RESULTS") {
+    throw new PlaceNotFoundError("No address found for this location");
+  }
+
+  const placeId = data.results?.[0]?.place_id;
+  if (data.status !== "OK" || !placeId) {
+    throw new Error(`Google Geocoding API returned status: ${data.status}`);
+  }
+
+  // Reuse the same Place Details lookup + US/completeness validation used by
+  // the autocomplete flow, so the two flows can never disagree on what
+  // counts as a valid, normalizable US property address.
+  return getNormalizedAddress(placeId);
 };
