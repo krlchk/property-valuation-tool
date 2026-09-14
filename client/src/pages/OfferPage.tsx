@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
+import { useRequireStep } from "../hooks/useRequireStep";
 import type { TimelineOption } from "../types/timeline";
 import {
   ADJUSTMENT_AMOUNT,
@@ -24,7 +25,7 @@ const FIXED_DETAILS = [
 ];
 
 // Page-specific copy per timeline — pricing/closing/inspection terms
-// themselves live in utils/offerTerms.ts, shared with EstimateAcceptedPage.
+// themselves live in utils/offerTerms.ts, shared with OfferHeldPage.
 const TIMELINE_OFFER_CONTENT: Record<
   TimelineOption,
   { eyebrow: string; subtitle: string; note: string }
@@ -51,6 +52,7 @@ export const OfferPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
   const { timeline } = useValuation();
+  useRequireStep("offer");
 
   const selectedTimeline = timeline ?? DEFAULT_TIMELINE;
   const content = TIMELINE_OFFER_CONTENT[selectedTimeline];
@@ -156,7 +158,7 @@ export const OfferPage = () => {
 
         <button
           type="button"
-          onClick={() => navigate(`/addresses/${addressId}/offer/accepted`)}
+          onClick={() => navigate(`/addresses/${addressId}/offer/held`)}
           className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500"
         >
           Accept this offer

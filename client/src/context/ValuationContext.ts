@@ -9,20 +9,16 @@ export type PropertyData = Address;
 export type ValuationContextType = {
   property: PropertyData | null;
   setProperty: (property: PropertyData) => void;
-  /** Uploaded photos — lives here (not on PropertyPhotosPage) so they
-   * survive navigating away and back, e.g. via the offer page's
-   * "Add photos" link. */
   photos: UploadedPhoto[];
   setPhotos: (photos: UploadedPhoto[]) => void;
-  /** Timeline picked on TimelinePage — read by OfferPage to price and
-   * describe the offer. */
   timeline: TimelineOption | null;
   setTimeline: (timeline: TimelineOption) => void;
-  /** ContactPage's form fields — lives here so they survive navigating away
-   * and back (e.g. OfferPage's Back / "Change my timeline" round-trip
-   * through TimelinePage and back to ContactPage). */
   contact: ContactInfo;
   setContact: (contact: ContactInfo) => void;
+  /** Clears property/photos/timeline/contact — used by "start over" actions
+   * (burger menu, the final page's CTA) so a fresh run doesn't inherit
+   * stale answers from the previous one. */
+  reset: () => void;
 };
 
 export const ValuationContext = createContext<ValuationContextType | undefined>(

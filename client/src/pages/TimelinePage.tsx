@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
+import { useRequireStep } from "../hooks/useRequireStep";
 import type { TimelineOption } from "../types/timeline";
 
 type TimelineStep = {
@@ -43,6 +44,7 @@ export const TimelinePage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
   const { timeline: selection, setTimeline: setSelection } = useValuation();
+  useRequireStep("timeline");
 
   const selectedIndex =
     selection === null

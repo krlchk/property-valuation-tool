@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { CheckIcon } from "../components/icons";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
+import { useRequireStep } from "../hooks/useRequireStep";
 import { formatCurrency } from "../utils/estimate";
 import {
   DEFAULT_TIMELINE,
@@ -25,10 +26,11 @@ const WHAT_HAPPENS_NEXT = [
   },
 ];
 
-export const EstimateAcceptedPage = () => {
+export const OfferHeldPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property, photos, timeline } = useValuation();
+  const { property, photos, timeline, reset } = useValuation();
+  useRequireStep("offer");
 
   const locationLabel = property
     ? `${property.title}, ${property.subtitle.split(",")[0]}`
@@ -101,8 +103,11 @@ export const EstimateAcceptedPage = () => {
 
         <button
           type="button"
-          onClick={() => navigate("/")}
-          className="mt-8 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500"
+          onClick={() => {
+            reset();
+            navigate("/");
+          }}
+          className="mt-8 w-full cursor-pointer p-1 text-center text-sm text-gray-500"
         >
           Estimate another property
         </button>

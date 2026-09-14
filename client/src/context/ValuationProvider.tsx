@@ -10,6 +10,13 @@ export const ValuationProvider = ({ children }: { children: ReactNode }) => {
   const [timeline, setTimeline] = useState<TimelineOption | null>(null);
   const [contact, setContact] = useState<ContactInfo>(EMPTY_CONTACT);
 
+  const reset = () => {
+    setProperty(null);
+    setPhotos([]);
+    setTimeline(null);
+    setContact(EMPTY_CONTACT);
+  };
+
   return (
     <ValuationContext.Provider
       value={{
@@ -21,6 +28,7 @@ export const ValuationProvider = ({ children }: { children: ReactNode }) => {
         setTimeline,
         contact,
         setContact,
+        reset,
       }}
     >
       {children}

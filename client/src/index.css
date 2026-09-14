@@ -18,3 +18,15 @@
   --text-caption: 8.5px;
   --text-body-sm: 12.5px;
 }
+
+/* Toast's countdown bar — width shrinks 100% -> 0% over its visible
+ * duration. Applied via inline `style` (duration comes from a JS
+ * constant), remounted per-message via `key` to restart the animation. */
+@keyframes toast-shrink {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}

@@ -4,6 +4,7 @@ import { CheckIcon } from "../components/icons";
 import { ProgressBar } from "../components/ProgressBar";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
+import { useRequireStep } from "../hooks/useRequireStep";
 
 // TODO: swap for the real AI processing time once that's wired up.
 const DURATION_MS = 10_000;
@@ -27,6 +28,7 @@ export const AnalyzingPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
   const { photos } = useValuation();
+  useRequireStep("offer");
 
   const [elapsedMs, setElapsedMs] = useState(0);
 

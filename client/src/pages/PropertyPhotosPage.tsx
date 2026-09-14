@@ -7,6 +7,7 @@ import { ArrowUpIcon, PlusIcon } from "../components/icons";
 import { ProgressBar } from "../components/ProgressBar";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
+import { useRequireStep } from "../hooks/useRequireStep";
 import { dedupeFiles } from "../utils/photoFiles";
 import type { UploadedPhoto } from "../types/photo";
 
@@ -32,6 +33,7 @@ export const PropertyPhotosPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
   const { property, photos, setPhotos } = useValuation();
+  useRequireStep("photos");
 
   const [categories] = useState<string[]>(PHOTO_CATEGORIES); // setter unused while custom categories are off
   const [isDialogOpen, setDialogOpen] = useState(false);

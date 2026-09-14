@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent } from "react";
 import { Modal } from "./Modal";
+import { Toast } from "./Toast";
 import { PlusIcon } from "./icons";
 import { dedupeFiles } from "../utils/photoFiles";
 import type { UploadedPhoto } from "../types/photo";
@@ -25,11 +26,13 @@ export const AddPhotosDialog = ({
 }: AddPhotosDialogProps) => {
   const [category, setCategory] = useState(categories[0] ?? "");
   const [files, setFiles] = useState<File[]>([]);
+  const [duplicateNotice, setDuplicateNotice] = useState<string | null>(null);
   // const [customDraft, setCustomDraft] = useState("");
   // const [showCustom, setShowCustom] = useState(false);
 
   const resetAndClose = () => {
     setFiles([]);
+    setDuplicateNotice(null);
     // setCustomDraft("");
     // setShowCustom(false);
     onClose();
@@ -38,6 +41,16 @@ export const AddPhotosDialog = ({
   const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
     const picked = event.target.files ? Array.from(event.target.files) : [];
     const unique = dedupeFiles(picked, existingPhotos);
+
+    const duplicateCount = picked.length - unique.length;
+    setDuplicateNotice(
+      duplicateCount === 0
+        ? null
+        : duplicateCount === 1
+          ? "That photo is already added — skipped it."
+          : `${duplicateCount} of those photos are already added — skipped them.`,
+    );
+
     setFiles(unique.slice(0, remainingSlots));
   };
 
@@ -63,6 +76,10 @@ export const AddPhotosDialog = ({
 
   return (
     <Modal open={open} onClose={resetAndClose} title="Add photos">
+      <Toast
+        message={duplicateNotice}
+        onDismiss={() => setDuplicateNotice(null)}
+      />
       <p className="text-xs font-medium text-slate-700">Category</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {categories.map((option) => (

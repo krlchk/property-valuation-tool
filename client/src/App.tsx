@@ -3,7 +3,7 @@ import {
   AddressPage,
   AnalyzingPage,
   ContactPage,
-  EstimateAcceptedPage,
+  OfferHeldPage,
   OfferPage,
   PropertyPhotosPage,
   RepairBreakdownPage,
@@ -12,7 +12,7 @@ import {
 
 const App = () => (
   <Routes>
-    <Route element={<AddressPage />} path="" />
+    <Route element={<AddressPage />} path="/" />
     <Route
       element={<PropertyPhotosPage />}
       path="/addresses/:addressId/photos"
@@ -29,8 +29,8 @@ const App = () => (
       path="/addresses/:addressId/offer/breakdown"
     />
     <Route
-      element={<EstimateAcceptedPage />}
-      path="/addresses/:addressId/offer/accepted"
+      element={<OfferHeldPage />}
+      path="/addresses/:addressId/offer/held"
     />
   </Routes>
 );

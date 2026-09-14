@@ -5,4 +5,4 @@ export { ContactPage } from "./ContactPage";
 export { AnalyzingPage } from "./AnalyzingPage";
 export { OfferPage } from "./OfferPage";
 export { RepairBreakdownPage } from "./RepairBreakdownPage";
-export { EstimateAcceptedPage } from "./EstimateAcceptedPage";
+export { OfferHeldPage } from "./OfferHeldPage";

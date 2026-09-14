@@ -1,5 +1,8 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import { useValuation } from "../context/ValuationContext";
 import { MenuIcon } from "./icons";
+import { Modal } from "./Modal";
 import { StepHeader } from "./StepHeader";
 
 type StepsWrapperProps = {
@@ -19,12 +22,42 @@ export const StepsWrapper = ({
   stepHeaderHideBack,
   stepHeaderOnBack,
 }: StepsWrapperProps) => {
+  const navigate = useNavigate();
+  const { reset } = useValuation();
+  const [isMenuOpen, setMenuOpen] = useState(false);
+
+  const handleStartOver = () => {
+    setMenuOpen(false);
+    reset();
+    navigate("/");
+  };
+
   return (
     <div className="flex min-h-dvh flex-col p-5">
       <header className="flex items-center justify-between border-b border-gray-200 py-5">
         <p className="font-semibold text-gray-400 text-[15px]">Your site</p>
-        <MenuIcon className="h-5 w-5 text-gray-400" />
+        <button
+          type="button"
+          onClick={() => setMenuOpen(true)}
+          aria-label="Open menu"
+          className="cursor-pointer rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+        >
+          <MenuIcon className="h-5 w-5" />
+        </button>
       </header>
+
+      <Modal open={isMenuOpen} onClose={() => setMenuOpen(false)} title="Menu">
+        <p className="text-sm text-slate-600">
+          Starting over clears your address, photos, and answers so far.
+        </p>
+        <button
+          type="button"
+          onClick={handleStartOver}
+          className="mt-4 w-full rounded-full border border-gray-200 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-gray-50"
+        >
+          Start over
+        </button>
+      </Modal>
 
       <section>
         <p className="mt-5 text-label font-bold tracking-wider text-custom-blue uppercase">

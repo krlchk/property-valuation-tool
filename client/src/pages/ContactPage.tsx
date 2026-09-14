@@ -4,6 +4,7 @@ import { CheckIcon } from "../components/icons";
 import { FormField } from "../components/FormField";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
+import { useRequireStep } from "../hooks/useRequireStep";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_MIN_LENGTH = 2;
@@ -16,6 +17,7 @@ export const ContactPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
   const { property, photos, contact, setContact } = useValuation();
+  useRequireStep("contact");
   const { name, phone, email, agreed } = contact;
 
   const [touched, setTouched] = useState<Record<Field, boolean>>({

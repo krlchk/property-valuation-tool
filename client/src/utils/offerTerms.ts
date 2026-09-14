@@ -2,7 +2,7 @@ import type { TimelineOption } from "../types/timeline";
 import { ESTIMATED_VALUE } from "./estimate";
 
 // Reasonable default while the user hasn't picked a timeline yet (e.g.
-// landed on /offer or /offer/accepted directly) — mirrors the old flat
+// landed on /offer or /offer/held directly) — mirrors the old flat
 // "thirty-day close" copy.
 export const DEFAULT_TIMELINE: TimelineOption = "3-months";
 
@@ -11,15 +11,15 @@ export type OfferTerms = {
   closingDate: string;
   inspection: string;
   /** Condensed one-line version of closingDate + inspection, for recap UI
-   * like EstimateAcceptedPage's summary card. */
+   * like OfferHeldPage's summary card. */
   summary: string;
 };
 
 // TODO: business logic still being worked out (see TimelinePage) — for now,
 // picking a faster close trades off price the way the TimelinePage copy
 // describes it (ASAP ~20% below full value, 12 months = full ESTIMATED_VALUE).
-// Shared by OfferPage and EstimateAcceptedPage so the accepted-offer recap
-// always matches what was shown on the offer itself.
+// Shared by OfferPage and OfferHeldPage so the held-offer recap always
+// matches what was shown on the offer itself.
 export const TIMELINE_OFFER_TERMS: Record<TimelineOption, OfferTerms> = {
   asap: {
     priceMultiplier: 0.8,
