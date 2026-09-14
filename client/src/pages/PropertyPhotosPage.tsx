@@ -5,7 +5,7 @@ import { CategoryPhotosDialog } from "../components/CategoryPhotosDialog";
 import { CategoryTile } from "../components/CategoryTile";
 import { ArrowUpIcon, PlusIcon } from "../components/icons";
 import { ProgressBar } from "../components/ProgressBar";
-import { StepHeader } from "../components/StepHeader";
+import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
 import { dedupeFiles } from "../utils/photoFiles";
 import type { UploadedPhoto } from "../types/photo";
@@ -42,6 +42,10 @@ export const PropertyPhotosPage = () => {
   const remaining = Math.max(TARGET_PHOTOS - photos.length, 0);
   const canContinue = photos.length > 0;
   const atLimit = photos.length >= TARGET_PHOTOS;
+
+  const locationLabel = property
+    ? `${property.title}, ${property.subtitle.split(",")[0]}`
+    : `Property #${addressId}`;
 
   const photosIn = (category: string) =>
     photos.filter((photo) => photo.category === category);
@@ -87,20 +91,19 @@ export const PropertyPhotosPage = () => {
   );
 
   return (
-    <div className="flex min-h-dvh flex-col p-5">
-      <StepHeader current={2} total={4} label="Step 2 of 4 · Photos" />
-
-      <main className="mt-8">
-        <h1 className="font-serif text-3xl leading-[1.15]">
+    <StepsWrapper
+      stepHeaderCurrent={2}
+      stepHeaderTotal={4}
+      stepHeaderLabel="Step 2 of 4 · Photos"
+    >
+      <div className="mt-5">
+        <h1 className="font-serif text-hero leading-[1.15]">
           Add 10 photos of your property
         </h1>
 
-        <p className="mt-3 text-xs text-slate-600">
-          {property
-            ? `${property.title} · ${property.subtitle}`
-            : `Property #${addressId}`}{" "}
-          — the first 10 photos are what our AI grades, so cover the whole
-          place.
+        <p className="mt-3 text-body-sm text-slate-600">
+          {locationLabel} — the first 10 photos are what our AI grades, so
+          cover the whole place.
         </p>
 
         <ul className="mt-6 flex flex-wrap gap-2 text-xs">
@@ -150,7 +153,7 @@ export const PropertyPhotosPage = () => {
           type="button"
           onClick={() => setDialogOpen(true)}
           disabled={atLimit}
-          className="mt-6 flex w-full flex-col items-center gap-3 rounded-2xl bg-gray-50 p-6 text-center transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-6 flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-custom-yellow bg-yellow-50 p-6 text-center transition-colors hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-custom-yellow text-slate-900">
             <PlusIcon className="h-6 w-6" />
@@ -204,6 +207,7 @@ export const PropertyPhotosPage = () => {
               : "You've covered the whole place — that's plenty for a solid estimate."}
           </p>
         </div>
+
         <div className="mt-6 flex items-center justify-center gap-4 rounded-3xl border-2 border-slate-900 p-4 transition-colors hover:bg-custom-yellow">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-custom-yellow">
             <ArrowUpIcon className="h-5 w-5 text-slate-900" />
@@ -218,28 +222,21 @@ export const PropertyPhotosPage = () => {
             </p>
           </div>
         </div>
-      </main>
 
-      <footer className="sticky bottom-0 -mx-5 mt-auto -mb-5 flex items-center justify-between gap-4 border-t border-gray-200 bg-white px-5 py-4">
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-slate-900">
-            {photos.length} photo{photos.length === 1 ? "" : "s"}
-          </p>
-          <p className="truncate text-xs text-slate-500">
-            {canContinue
-              ? "Roof and bathrooms move it most"
-              : "Add at least one photo to continue"}
-          </p>
-        </div>
         <button
           type="button"
           onClick={() => navigate(`/addresses/${addressId}/contact`)}
           disabled={!canContinue}
-          className="shrink-0 rounded-full bg-custom-yellow px-6 py-3 font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-[#E8F4FD] disabled:opacity-50"
         >
           Continue
         </button>
-      </footer>
+        <p className="mt-2 text-center text-xs text-slate-500">
+          {canContinue
+            ? "Roof and bathrooms move it most"
+            : "Add at least one photo to continue"}
+        </p>
+      </div>
 
       <AddPhotosDialog
         open={isDialogOpen}
@@ -257,6 +254,6 @@ export const PropertyPhotosPage = () => {
         onClose={() => setViewingCategory(null)}
         onDelete={handleDeletePhoto}
       />
-    </div>
+    </StepsWrapper>
   );
 };
