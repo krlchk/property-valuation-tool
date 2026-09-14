@@ -1,8 +1,7 @@
-import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { StepsWrapper } from "../components/StepsWrapper";
-
-type TimelineOption = "asap" | "3-months" | "12-months";
+import { useValuation } from "../context/ValuationContext";
+import type { TimelineOption } from "../types/timeline";
 
 type TimelineStep = {
   id: TimelineOption;
@@ -43,7 +42,7 @@ const TIMELINE_CONTENT: Record<
 export const TimelinePage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const [selection, setSelection] = useState<TimelineOption | null>(null);
+  const { timeline: selection, setTimeline: setSelection } = useValuation();
 
   const selectedIndex =
     selection === null

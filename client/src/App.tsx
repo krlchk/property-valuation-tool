@@ -4,8 +4,6 @@ import {
   AnalyzingPage,
   ContactPage,
   EstimateAcceptedPage,
-  EstimateReadyPage,
-  // HomePage,
   OfferPage,
   PropertyPhotosPage,
   RepairBreakdownPage,
@@ -14,7 +12,6 @@ import {
 
 const App = () => (
   <Routes>
-    {/* <Route element={<HomePage />} path="/" /> */}
     <Route element={<AddressPage />} path="" />
     <Route
       element={<PropertyPhotosPage />}
@@ -34,10 +31,6 @@ const App = () => (
     <Route
       element={<EstimateAcceptedPage />}
       path="/addresses/:addressId/offer/accepted"
-    />
-    <Route
-      element={<EstimateReadyPage />}
-      path="/addresses/:addressId/offer/confirmed"
     />
   </Routes>
 );

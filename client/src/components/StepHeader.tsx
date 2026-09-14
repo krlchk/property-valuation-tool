@@ -6,6 +6,10 @@ type StepHeaderProps = {
   total?: number;
   label: string;
   hideBack?: boolean;
+  /** Override the default browser-history back navigation — e.g. OfferPage
+   * routes Back to /timeline instead of AnalyzingPage (which would just
+   * auto-redirect forward again). */
+  onBack?: () => void;
 };
 
 export const StepHeader = ({
@@ -13,8 +17,10 @@ export const StepHeader = ({
   total = 4,
   label,
   hideBack = false,
+  onBack,
 }: StepHeaderProps) => {
   const navigate = useNavigate();
+  const handleBack = onBack ?? (() => navigate(-1));
 
   return (
     <header>
@@ -26,7 +32,7 @@ export const StepHeader = ({
         {current > 1 && !hideBack && (
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             aria-label="Go back"
             className="-ml-1 mt-2 cursor-pointer p-1 text-label text-gray-500"
           >

@@ -15,17 +15,17 @@ type Field = "name" | "phone" | "email";
 export const ContactPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property, photos } = useValuation();
+  const { property, photos, contact, setContact } = useValuation();
+  const { name, phone, email, agreed } = contact;
 
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [agreed, setAgreed] = useState(false);
   const [touched, setTouched] = useState<Record<Field, boolean>>({
     name: false,
     phone: false,
     email: false,
   });
+
+  const updateContact = (patch: Partial<typeof contact>) =>
+    setContact({ ...contact, ...patch });
 
   const nameError =
     name.trim().length === 0
@@ -88,7 +88,7 @@ export const ContactPage = () => {
             autoComplete="name"
             placeholder="Dana Marsh"
             value={name}
-            onChange={setName}
+            onChange={(value) => updateContact({ name: value })}
             onBlur={markTouched("name")}
             error={touched.name ? nameError : undefined}
           />
@@ -100,7 +100,7 @@ export const ContactPage = () => {
             autoComplete="tel"
             placeholder="+1 817 555 0142"
             value={phone}
-            onChange={setPhone}
+            onChange={(value) => updateContact({ phone: value })}
             onBlur={markTouched("phone")}
             error={touched.phone ? phoneError : undefined}
           />
@@ -112,7 +112,7 @@ export const ContactPage = () => {
             autoComplete="email"
             placeholder="dana@example.com"
             value={email}
-            onChange={setEmail}
+            onChange={(value) => updateContact({ email: value })}
             onBlur={markTouched("email")}
             error={touched.email ? emailError : undefined}
           />
@@ -122,7 +122,9 @@ export const ContactPage = () => {
           <input
             type="checkbox"
             checked={agreed}
-            onChange={(event) => setAgreed(event.target.checked)}
+            onChange={(event) =>
+              updateContact({ agreed: event.target.checked })
+            }
             className="peer sr-only"
           />
           <span

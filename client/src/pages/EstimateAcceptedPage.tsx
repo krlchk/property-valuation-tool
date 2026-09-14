@@ -1,79 +1,78 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { CheckIcon } from "../components/icons";
+import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
+import { formatCurrency } from "../utils/estimate";
 import {
-  CONDITION_ADJUSTMENT_PCT,
-  ESTIMATED_VALUE,
-  formatCurrency,
-} from "../utils/estimate";
+  DEFAULT_TIMELINE,
+  TIMELINE_OFFER_TERMS,
+  getOfferPriceRange,
+} from "../utils/offerTerms";
 
 const WHAT_HAPPENS_NEXT = [
   {
-    title: "We review your estimate",
-    description:
-      "Our team checks the property details and photos behind the number.",
+    title: "We call you",
+    description: "Within one business day. A person, not a robot.",
   },
   {
-    title: "We may reach out",
+    title: "We confirm the number",
     description:
-      "If anything needs confirming, someone from our team will contact you.",
+      "Title check and a quick walk. The photos already did most of it.",
   },
   {
-    title: "Your estimate stays saved",
-    description:
-      "Revisit it anytime — nothing is signed and no offer has been made.",
+    title: "You close and get paid",
+    description: "Wire or check, your choice of date. No fees come out of it.",
   },
 ];
 
 export const EstimateAcceptedPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property } = useValuation();
+  const { property, photos, timeline } = useValuation();
 
   const locationLabel = property
     ? `${property.title}, ${property.subtitle.split(",")[0]}`
     : `Property #${addressId}`;
+  const referenceId = property?.id ?? addressId;
+
+  const terms = TIMELINE_OFFER_TERMS[timeline ?? DEFAULT_TIMELINE];
+  const { low, high } = getOfferPriceRange(terms.priceMultiplier);
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="bg-blue-100 px-5 pt-6 pb-6">
+    <StepsWrapper
+      stepHeaderCurrent={4}
+      stepHeaderTotal={4}
+      stepHeaderLabel="Offer held"
+      stepHeaderOnBack={() => navigate(`/addresses/${addressId}/offer`)}
+    >
+      <div className="mt-5">
         <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-custom-yellow">
           <CheckIcon className="h-6 w-6 text-slate-900" />
         </span>
-        <h1 className="mt-4 font-serif text-3xl leading-[1.15]">
-          You've accepted your estimate.
+        <h1 className="mt-4 font-serif text-hero leading-[1.15]">
+          Your offer is held.
         </h1>
-        <p className="mt-3 text-xs text-slate-600">
-          {locationLabel}. Nothing is signed, and no offer has been made —
-          this simply confirms the estimate for your records.
+        <p className="mt-3 text-body-sm text-slate-600">
+          {locationLabel}. Nothing is signed yet — this simply confirms your
+          offer for your records.
         </p>
-      </header>
 
-      <main className="flex-1 p-5">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-gray-50 p-4">
-            <p className="text-xs font-bold tracking-wider text-slate-500 uppercase">
-              Estimated value
-            </p>
-            <p className="mt-2 text-xl font-bold text-slate-900">
-              {formatCurrency(ESTIMATED_VALUE)}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-gray-50 p-4">
-            <p className="text-xs font-bold tracking-wider text-slate-500 uppercase">
-              Condition adjustment
-            </p>
-            <p
-              className={`mt-2 text-xl font-bold ${
-                CONDITION_ADJUSTMENT_PCT < 0
-                  ? "text-rose-800"
-                  : "text-emerald-800"
-              }`}
-            >
-              {CONDITION_ADJUSTMENT_PCT > 0 ? "+" : ""}
-              {CONDITION_ADJUSTMENT_PCT}%
+        <div className="mt-6 rounded-2xl bg-blue-100 p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="text-sm text-slate-700">
+              <p>
+                {photos.length} photo{photos.length === 1 ? "" : "s"}
+              </p>
+              <p>{terms.summary}</p>
+            </div>
+            <p className="text-right text-xl font-bold text-slate-900">
+              {formatCurrency(low)}–{high.toLocaleString("en-US")}
             </p>
           </div>
+
+          <div className="my-4 border-t border-custom-blue/15" />
+
+          <p className="text-sm text-slate-700">Reference #{referenceId}.</p>
         </div>
 
         <h2 className="mt-8 text-xs font-bold tracking-wider text-slate-500 uppercase">
@@ -102,20 +101,12 @@ export const EstimateAcceptedPage = () => {
 
         <button
           type="button"
-          onClick={() => navigate(`/addresses/${addressId}/offer/confirmed`)}
+          onClick={() => navigate("/")}
           className="mt-8 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500"
         >
-          Sounds good
+          Estimate another property
         </button>
-
-        <button
-          type="button"
-          onClick={() => navigate(`/addresses/${addressId}/offer`)}
-          className="mt-3 w-full rounded-full border border-gray-200 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-gray-50"
-        >
-          Back
-        </button>
-      </main>
-    </div>
+      </div>
+    </StepsWrapper>
   );
 };
