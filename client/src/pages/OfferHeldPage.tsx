@@ -74,12 +74,9 @@ export const OfferHeldPage = () => {
 
           <div className="my-4 border-t border-custom-blue/15" />
 
-          <p className="text-sm text-slate-700">Reference #{referenceId}.</p>
+          <p className="text-sm text-slate-700">Reference №{referenceId}. Call or text (817) 555–0100, 8am to 7pm — a person answers.</p>
         </div>
 
-        <h2 className="mt-8 text-xs font-bold tracking-wider text-slate-500 uppercase">
-          What happens next
-        </h2>
         <ul className="mt-4 space-y-3">
           {WHAT_HAPPENS_NEXT.map((step, index) => (
             <li
