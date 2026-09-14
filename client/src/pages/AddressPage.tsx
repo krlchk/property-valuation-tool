@@ -1,9 +1,9 @@
 import { useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPinIcon } from "../components/icons";
-import { StepHeader } from "../components/StepHeader";
 import { useValuation } from "../context/ValuationContext";
 import type { Address } from "../types/address";
+import { StepsWrapper } from "../components/StepsWrapper";
 
 const addressesArrayMock: Address[] = [
   {
@@ -144,104 +144,94 @@ export const AddressPage = () => {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col p-5">
-      <StepHeader current={1} total={4} label="Step 1 of 4 · Address" />
+    <StepsWrapper
+      stepHeaderCurrent={1}
+      stepHeaderTotal={4}
+      stepHeaderLabel="Step 1 of 4 · Address"
+    >
+      <div className="mt-5">
+        <h1 className="font-serif text-hero leading-[1.15]">Which property?</h1>
+        <p className="mt-1 text-body-sm text-slate-600">
+          Pick the exact match so we price the right parcel.
+        </p>
 
-      <main className="mt-8">
-        <h1 className="font-serif text-3xl leading-[1.15]">Which property?</h1>
+        <form role="search" onSubmit={(event) => event.preventDefault()}>
+          <label htmlFor="address" className="sr-only">
+            Property address
+          </label>
+          <div className="mt-5 flex items-center gap-2 rounded-2xl border border-gray-300 bg-white px-3 py-3">
+            <MapPinIcon className="h-4 w-4 shrink-0 text-gray-400" />
+            <input
+              id="address"
+              name="address"
+              type="text"
+              autoComplete="street-address"
+              spellCheck={false}
+              enterKeyHint="search"
+              placeholder="Start typing an address"
+              value={query}
+              onChange={handleSearch}
+              className="w-full text-xs text-gray-900 outline-none placeholder:text-body-sm placeholder:text-gray-400"
+            />
+          </div>
+        </form>
 
-        <section
-          aria-label="Address search"
-          className="mt-5 rounded-2xl bg-blue-100 p-4"
-        >
-          <form role="search" onSubmit={(event) => event.preventDefault()}>
-            <label htmlFor="address" className="sr-only">
-              Property address
-            </label>
-            <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3">
-              <MapPinIcon className="h-5 w-5 shrink-0 text-gray-400" />
-              <input
-                id="address"
-                name="address"
-                type="text"
-                autoComplete="street-address"
-                spellCheck={false}
-                enterKeyHint="search"
-                placeholder="Start typing an address"
-                value={query}
-                onChange={handleSearch}
-                className="w-full text-base text-gray-900 outline-none placeholder:text-gray-400"
-              />
-            </div>
-          </form>
-
-          <ul className="mt-4">
-            <li>
-              <button
-                type="button"
-                className="flex w-full items-center gap-3 rounded-t-2xl bg-gray-50 px-4 py-3 text-left font-semibold text-gray-900 transition-colors hover:bg-gray-100"
-              >
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full bg-amber-400"
-                  aria-hidden="true"
-                />
-                Use my current location
-              </button>
-            </li>
-
-            {visibleMatches.map((address, index) => (
-              <li key={address.id}>
-                <button
-                  type="button"
-                  onClick={() => handleSelect(address)}
-                  className={`block w-full border-t border-gray-100 bg-white px-4 py-3 text-left transition-colors hover:bg-gray-50 ${
-                    index === visibleMatches.length - 1 ? "rounded-b-2xl" : ""
-                  }`}
-                >
-                  <span className="block font-semibold text-gray-900">
-                    {address.title}
-                  </span>
-                  <span className="mt-0.5 block text-xs text-gray-500">
-                    {address.subtitle}
-                  </span>
-                </button>
-              </li>
-            ))}
-
-            {visibleMatches.length === 0 && (
-              <li className="rounded-b-2xl border-t border-gray-100 bg-white px-4 py-6 text-center text-xs text-gray-500">
-                No matches. Check the spelling or try a nearby street.
-              </li>
-            )}
-          </ul>
-
-          {(canShowMore || canCollapse) && (
+        <ul className="mt-4 rounded-2xl border border-gray-300">
+          <li>
             <button
               type="button"
-              onClick={() =>
-                setVisibleCount((count) =>
-                  canShowMore ? count + PAGE_SIZE : PAGE_SIZE,
-                )
-              }
-              className="mt-2 w-full cursor-pointer py-2 text-xs font-medium text-custom-blue"
+              className="flex w-full items-center gap-3 rounded-t-2xl bg-gray-50 px-4 py-3 text-left text-body-sm font-semibold text-gray-900 transition-colors hover:bg-gray-100"
             >
-              {canShowMore
-                ? `Show ${Math.min(PAGE_SIZE, matches.length - visibleCount)} more`
-                : "Show less"}
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full bg-amber-400"
+                aria-hidden="true"
+              />
+              Use my current location
             </button>
+          </li>
+
+          {visibleMatches.map((address, index) => (
+            <li key={address.id}>
+              <button
+                type="button"
+                onClick={() => handleSelect(address)}
+                className={`block w-full border-t border-gray-300 bg-white px-4 py-3 text-left transition-colors hover:bg-gray-50 ${
+                  index === visibleMatches.length - 1 ? "rounded-b-2xl" : ""
+                }`}
+              >
+                <span className="block text-body-sm font-semibold text-gray-900">
+                  {address.title}
+                </span>
+                <span className="mt-0.5 block text-[11px] text-gray-500">
+                  {address.subtitle}
+                </span>
+              </button>
+            </li>
+          ))}
+
+          {visibleMatches.length === 0 && (
+            <li className="rounded-b-2xl border-t border-gray-100 bg-white px-4 py-6 text-center text-xs text-gray-500">
+              No matches. Check the spelling or try a nearby street.
+            </li>
           )}
+        </ul>
 
-          <p className="mt-3 px-1 text-xs text-slate-600">
-            Pick the exact match so we price the right parcel.
-          </p>
-        </section>
-      </main>
-
-      <footer className="mt-auto">
-        <p className="mt-5 text-center text-xs text-gray-500">
-          Prototype — suggestions are a fixed list, not Google Places.
-        </p>
-      </footer>
-    </div>
+        {(canShowMore || canCollapse) && (
+          <button
+            type="button"
+            onClick={() =>
+              setVisibleCount((count) =>
+                canShowMore ? count + PAGE_SIZE : PAGE_SIZE,
+              )
+            }
+            className="mt-2 w-full cursor-pointer py-2 text-xs font-medium text-custom-blue"
+          >
+            {canShowMore
+              ? `Show ${Math.min(PAGE_SIZE, matches.length - visibleCount)} more`
+              : "Show less"}
+          </button>
+        )}
+      </div>
+    </StepsWrapper>
   );
 };

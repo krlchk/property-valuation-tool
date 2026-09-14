@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeftIcon } from "./icons";
 import { StepProgress } from "./StepProgress";
 
 type StepHeaderProps = {
@@ -13,20 +12,22 @@ export const StepHeader = ({ current, total = 4, label }: StepHeaderProps) => {
 
   return (
     <header>
+      <StepProgress current={current} total={total} className="mt-2" />
       <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="Go back"
-          className="-ml-1 rounded-full p-1 text-gray-900 transition-colors hover:bg-gray-100"
-        >
-          <ArrowLeftIcon className="h-5 w-5" />
-        </button>
-        <p className="text-xs font-bold tracking-wider text-custom-blue uppercase">
+        <p className="mt-2 text-label font-semibold tracking-wider text-custom-blue uppercase">
           {label}
         </p>
+        {current > 1 && (
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+            className="-ml-1 mt-2 cursor-pointer p-1 text-label text-gray-500"
+          >
+            Back
+          </button>
+        )}
       </div>
-      <StepProgress current={current} total={total} className="mt-2" />
     </header>
   );
 };

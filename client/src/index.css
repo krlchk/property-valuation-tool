@@ -3,4 +3,18 @@
 @theme {
   --color-custom-blue: rgb(11, 107, 176);
   --color-custom-yellow: rgb(255, 213, 46);
+
+  /* Site-shell (StepsWrapper) brand palette — pinned hex from the design
+   * file, centralized here since they repeat across StepsWrapper/AddressPage
+   * instead of each page re-typing the same hex. */
+  --color-brand-navy: #0b3a5c;
+  --color-brand-navy-muted: #38617d;
+
+  /* Site-shell micro type scale — same reasoning: these exact px sizes
+   * repeat across StepsWrapper, StepHeader and AddressPage. One-off sizes
+   * used in a single place stay as inline arbitrary values. */
+  --text-hero: 27px;
+  --text-label: 9px;
+  --text-caption: 8.5px;
+  --text-body-sm: 12.5px;
 }
