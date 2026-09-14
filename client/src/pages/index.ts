@@ -1,6 +1,7 @@
 export { HomePage } from "./HomePage";
 export { AddressPage } from "./AddressPage";
 export { PropertyPhotosPage } from "./PropertyPhotosPage";
+export { TimelinePage } from "./TimelinePage";
 export { ContactPage } from "./ContactPage";
 export { AnalyzingPage } from "./AnalyzingPage";
 export { OfferPage } from "./OfferPage";

@@ -225,7 +225,7 @@ export const PropertyPhotosPage = () => {
 
         <button
           type="button"
-          onClick={() => navigate(`/addresses/${addressId}/contact`)}
+          onClick={() => navigate(`/addresses/${addressId}/timeline`)}
           disabled={!canContinue}
           className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-[#E8F4FD] disabled:opacity-50"
         >

@@ -67,9 +67,9 @@ export const ContactPage = () => {
   return (
     <div className="flex min-h-dvh flex-col p-5">
       <StepHeader
-        current={3}
+        current={4}
         total={4}
-        label="Step 3 of 4 · Who to send it to"
+        label="Step 4 of 4 · Who to send it to"
       />
 
       <main className="mt-8">
