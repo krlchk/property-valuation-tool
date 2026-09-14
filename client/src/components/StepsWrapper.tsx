@@ -7,6 +7,7 @@ type StepsWrapperProps = {
   stepHeaderCurrent: number;
   stepHeaderTotal: number;
   stepHeaderLabel: string;
+  stepHeaderHideBack?: boolean;
 };
 
 export const StepsWrapper = ({
@@ -14,6 +15,7 @@ export const StepsWrapper = ({
   stepHeaderCurrent,
   stepHeaderTotal,
   stepHeaderLabel,
+  stepHeaderHideBack,
 }: StepsWrapperProps) => {
   return (
     <div className="flex min-h-dvh flex-col p-5">
@@ -58,6 +60,7 @@ export const StepsWrapper = ({
             current={stepHeaderCurrent}
             total={stepHeaderTotal}
             label={stepHeaderLabel}
+            hideBack={stepHeaderHideBack}
           />
           {children}
         </div>

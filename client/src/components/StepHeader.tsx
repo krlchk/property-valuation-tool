@@ -5,9 +5,15 @@ type StepHeaderProps = {
   current: number;
   total?: number;
   label: string;
+  hideBack?: boolean;
 };
 
-export const StepHeader = ({ current, total = 4, label }: StepHeaderProps) => {
+export const StepHeader = ({
+  current,
+  total = 4,
+  label,
+  hideBack = false,
+}: StepHeaderProps) => {
   const navigate = useNavigate();
 
   return (
@@ -17,7 +23,7 @@ export const StepHeader = ({ current, total = 4, label }: StepHeaderProps) => {
         <p className="mt-2 text-label font-semibold tracking-wider text-custom-blue uppercase">
           {label}
         </p>
-        {current > 1 && (
+        {current > 1 && !hideBack && (
           <button
             type="button"
             onClick={() => navigate(-1)}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CheckIcon } from "../components/icons";
 import { ProgressBar } from "../components/ProgressBar";
+import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
 
 // TODO: swap for the real AI processing time once that's wired up.
@@ -25,7 +26,7 @@ const formatCountdown = (remainingMs: number) => {
 export const AnalyzingPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property, photos } = useValuation();
+  const { photos } = useValuation();
 
   const [elapsedMs, setElapsedMs] = useState(0);
 
@@ -52,33 +53,30 @@ export const AnalyzingPage = () => {
     STEPS.length,
   );
 
-  const locationLabel = property
-    ? `${property.title}, ${property.subtitle.split(",")[0]}`
-    : `Property #${addressId}`;
-
   return (
-    <div className="flex min-h-dvh flex-col justify-between p-5">
-      <p className="font-mono text-xs tracking-wider text-slate-500 uppercase">
-        {locationLabel}
-      </p>
-
-      <main className="mt-8 flex flex-col">
+    <StepsWrapper
+      stepHeaderCurrent={4}
+      stepHeaderTotal={4}
+      stepHeaderLabel="Pricing your property"
+      stepHeaderHideBack
+    >
+      <div className="mt-5">
         <div className="rounded-2xl bg-blue-100 p-4">
           <div className="flex items-baseline justify-between gap-2">
-            <p className="font-mono text-xs font-bold tracking-wider text-slate-600 uppercase">
+            <p className="font-mono text-label font-bold tracking-wider text-slate-600 uppercase">
               Reading {photos.length} photo{photos.length === 1 ? "" : "s"}
             </p>
-            <p className="font-mono text-lg font-bold text-slate-900">
+            <p className="font-mono text-2xl font-bold text-slate-900">
               {formatCountdown(remainingMs)}
             </p>
           </div>
           <ProgressBar percent={progressPct} className="mt-3" />
         </div>
 
-        <h1 className="mt-8 font-serif text-3xl leading-[1.15]">
+        <h1 className="mt-8 font-serif text-hero leading-[1.15]">
           Pricing the condition.
         </h1>
-        <p className="mt-3 text-xs text-slate-600">
+        <p className="mt-3 text-body-sm text-slate-600">
           No forms and no phone calls. Just the photos you already sent.
         </p>
 
@@ -92,12 +90,9 @@ export const AnalyzingPage = () => {
                 className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-3"
               >
                 {done ? (
-                  <CheckIcon className="h-4 w-4 shrink-0 text-slate-900" />
+                  <CheckIcon className="h-4 w-4 shrink-0 text-custom-blue" />
                 ) : active ? (
-                  <span
-                    aria-hidden="true"
-                    className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-gray-300 border-t-yellow-400"
-                  />
+                  <CheckIcon className="h-4 w-4 shrink-0 text-amber-400" />
                 ) : (
                   <span
                     aria-hidden="true"
@@ -117,20 +112,20 @@ export const AnalyzingPage = () => {
             );
           })}
         </ul>
-      </main>
 
-      <footer className="flex items-center justify-between gap-4 pt-8">
-        <p className="font-mono text-xs tracking-wider text-slate-400 uppercase">
-          Stay on this screen — we'll text you if it runs long.
-        </p>
-        <button
-          type="button"
-          onClick={() => navigate(`/addresses/${addressId}/offer`)}
-          className="shrink-0 cursor-pointer text-sm font-medium text-custom-blue"
-        >
-          Skip →
-        </button>
-      </footer>
-    </div>
+        <div className="mt-8 flex items-center justify-between gap-4">
+          <p className="font-mono text-caption tracking-wider text-slate-400 uppercase">
+            Stay on this page — we'll text you if it runs long.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate(`/addresses/${addressId}/offer`)}
+            className="shrink-0 cursor-pointer text-sm font-medium text-custom-blue"
+          >
+            Skip →
+          </button>
+        </div>
+      </div>
+    </StepsWrapper>
   );
 };
