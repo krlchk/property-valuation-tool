@@ -29,7 +29,7 @@ export const StepsWrapper = ({
         <h1 className="mt-4 font-serif text-hero leading-[1.15]">
           What's your property worth in cash?
         </h1>
-        <p className="mt-3 text-[13px] text-gray-600">
+        <p className="mt-3 text-[16px] text-gray-600">
           Photos in, cash range out — your number within 90 seconds.
         </p>
       </section>

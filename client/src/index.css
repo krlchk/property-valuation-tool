@@ -13,7 +13,7 @@
   /* Site-shell micro type scale — same reasoning: these exact px sizes
    * repeat across StepsWrapper, StepHeader and AddressPage. One-off sizes
    * used in a single place stay as inline arbitrary values. */
-  --text-hero: 27px;
+  --text-hero: 42px;
   --text-label: 9px;
   --text-caption: 8.5px;
   --text-body-sm: 12.5px;
