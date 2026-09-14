@@ -4,6 +4,13 @@ import { MapPinIcon } from "../components/icons";
 import { useValuation } from "../context/ValuationContext";
 import type { Address } from "../types/address";
 import { StepsWrapper } from "../components/StepsWrapper";
+import { createProperty } from "../services/api";
+
+const parseSubtitle = (subtitle: string) => {
+  const [city = "", rest = ""] = subtitle.split(",").map((part) => part.trim());
+  const [state = "", postalCode = ""] = rest.split(" ").filter(Boolean);
+  return { city, state, postalCode };
+};
 
 const addressesArrayMock: Address[] = [
   {
@@ -114,6 +121,8 @@ export const AddressPage = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [selectError, setSelectError] = useState<string | null>(null);
   const { setProperty } = useValuation();
 
   const search = query.trim().toLowerCase();
@@ -134,13 +143,25 @@ export const AddressPage = () => {
     setVisibleCount(PAGE_SIZE);
   };
 
-  const handleSelect = (address: Address) => {
-    setProperty({
-      id: address.id,
-      title: address.title,
-      subtitle: address.subtitle,
-    });
-    navigate(`/addresses/${address.id}/photos`);
+  const handleSelect = async (address: Address) => {
+    setSelectError(null);
+    setSubmittingId(address.id);
+    try {
+      const { city, state, postalCode } = parseSubtitle(address.subtitle);
+      const property = await createProperty({
+        addressLine1: address.title,
+        city,
+        state,
+        postalCode,
+      });
+      setProperty(property);
+      navigate(`/addresses/${property.id}/photos`);
+    } catch (error) {
+      console.error("Failed to create property:", error);
+      setSelectError("Couldn't select that address. Please try again.");
+    } finally {
+      setSubmittingId(null);
+    }
   };
 
   return (
@@ -195,7 +216,8 @@ export const AddressPage = () => {
               <button
                 type="button"
                 onClick={() => handleSelect(address)}
-                className={`block w-full border-t border-gray-300 bg-white px-4 py-3 text-left transition-colors hover:bg-gray-50 ${
+                disabled={submittingId !== null}
+                className={`block w-full border-t border-gray-300 bg-white px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 ${
                   index === visibleMatches.length - 1 ? "rounded-b-2xl" : ""
                 }`}
               >
@@ -203,7 +225,7 @@ export const AddressPage = () => {
                   {address.title}
                 </span>
                 <span className="mt-0.5 block text-[11px] text-gray-500">
-                  {address.subtitle}
+                  {submittingId === address.id ? "Selecting…" : address.subtitle}
                 </span>
               </button>
             </li>
@@ -215,6 +237,10 @@ export const AddressPage = () => {
             </li>
           )}
         </ul>
+
+        {selectError && (
+          <p className="mt-2 text-center text-xs text-red-600">{selectError}</p>
+        )}
 
         {(canShowMore || canCollapse) && (
           <button

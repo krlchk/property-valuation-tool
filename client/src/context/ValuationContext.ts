@@ -1,14 +1,12 @@
 import { createContext, useContext } from "react";
-import type { Address } from "../types/address";
 import type { ContactInfo } from "../types/contact";
 import type { UploadedPhoto } from "../types/photo";
 import type { TimelineOption } from "../types/timeline";
-
-export type PropertyData = Address;
+import type { PropertyResponse } from "@pvt/shared";
 
 export type ValuationContextType = {
-  property: PropertyData | null;
-  setProperty: (property: PropertyData) => void;
+  property: PropertyResponse | null;
+  setProperty: (property: PropertyResponse) => void;
   photos: UploadedPhoto[];
   setPhotos: (photos: UploadedPhoto[]) => void;
   timeline: TimelineOption | null;

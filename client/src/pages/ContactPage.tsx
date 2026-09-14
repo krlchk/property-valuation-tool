@@ -58,7 +58,7 @@ export const ContactPage = () => {
     setTouched((prev) => ({ ...prev, [field]: true }));
 
   const locationLabel = property
-    ? `${property.title}, ${property.subtitle.split(",")[0]}`
+    ? `${property.addressLine1}, ${property.city}`
     : `Property #${addressId}`;
 
   const handleSubmit = () => {

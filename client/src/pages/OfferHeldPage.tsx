@@ -33,7 +33,7 @@ export const OfferHeldPage = () => {
   useRequireStep("offer");
 
   const locationLabel = property
-    ? `${property.title}, ${property.subtitle.split(",")[0]}`
+    ? `${property.addressLine1}, ${property.city}`
     : `Property #${addressId}`;
   const referenceId = property?.id ?? addressId;
 

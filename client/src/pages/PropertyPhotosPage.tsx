@@ -46,7 +46,7 @@ export const PropertyPhotosPage = () => {
   const atLimit = photos.length >= TARGET_PHOTOS;
 
   const locationLabel = property
-    ? `${property.title}, ${property.subtitle.split(",")[0]}`
+    ? `${property.addressLine1}, ${property.city}`
     : `Property #${addressId}`;
 
   const photosIn = (category: string) =>
