@@ -1,18 +1,15 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { StepsWrapper } from "../components/StepsWrapper";
-import { useValuation } from "../context/ValuationContext";
+import { LoadingSpinner } from "../components/Loading";
+import { useOfferData } from "../hooks/useOfferData";
 import { useRequireStep } from "../hooks/useRequireStep";
-import type { TimelineOption } from "../types/timeline";
+import type { OfferTerm } from "@pvt/shared";
 import {
-  ADJUSTMENT_AMOUNT,
   CONDITION_ADJUSTMENT_PCT,
-  ESTIMATED_VALUE,
   STARTING_VALUE,
   formatCurrency,
 } from "../utils/estimate";
 import {
-  DEFAULT_TIMELINE,
-  TIMELINE_OFFER_TERMS,
   getOfferPriceRange,
 } from "../utils/offerTerms";
 
@@ -26,48 +23,97 @@ const FIXED_DETAILS = [
 
 // Page-specific copy per timeline — pricing/closing/inspection terms
 // themselves live in utils/offerTerms.ts, shared with OfferHeldPage.
-const TIMELINE_OFFER_CONTENT: Record<
-  TimelineOption,
-  { eyebrow: string; subtitle: string; note: string }
-> = {
-  asap: {
-    eyebrow: "Seven-day cash offer",
-    subtitle: "Priced for a seven-day close. More photos tighten the range.",
-    note: "No inspection, no repairs, no fees. Name the closing day and we hit it.",
-  },
-  "3-months": {
-    eyebrow: "Thirty-day offer",
-    subtitle: "Priced for a thirty-day close. More photos tighten the range.",
-    note: "A five-day look at the property, then we close. Repairs still on us.",
-  },
-  "12-months": {
+const getOfferContent = (term: OfferTerm) => {
+  const timelineAdjustmentPct = Math.round((term.priceMultiplier - 1) * 100);
+
+  if (timelineAdjustmentPct <= -15) {
+    return {
+      eyebrow: "Seven-day cash offer",
+      subtitle: `Priced for a ${term.closingDaysMin}-day close. More photos tighten the range.`,
+      note: "No inspection, no repairs, no fees. Name the closing day and we hit it.",
+    };
+  }
+
+  if (timelineAdjustmentPct < 0) {
+    return {
+      eyebrow: "Thirty-day offer",
+      subtitle: `Priced for a ${term.closingDaysMin}-day close. More photos tighten the range.`,
+      note: `${term.inspectionDescription ?? `${term.inspectionDays}-day inspection`}, then we close. Repairs still on us.`,
+    };
+  }
+
+  return {
     eyebrow: "Full-value offer",
-    subtitle:
-      "Priced at full value on a normal timeline. More photos tighten the range.",
-    note: "Ten days of due diligence, a normal close, and the top number we can write.",
-  },
+    subtitle: "Priced at full value on a normal timeline. More photos tighten the range.",
+    note: `${term.inspectionDescription ?? `${term.inspectionDays}-day due diligence`}, a normal close, and the top number we can write.`,
+  };
 };
 
 export const OfferPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { timeline } = useValuation();
+  const {
+    property,
+    selectedTerm,
+    timelineAdjustmentPct,
+    isLoading,
+    error,
+  } = useOfferData(addressId);
   useRequireStep("offer");
 
-  const selectedTimeline = timeline ?? DEFAULT_TIMELINE;
-  const content = TIMELINE_OFFER_CONTENT[selectedTimeline];
-  const terms = TIMELINE_OFFER_TERMS[selectedTimeline];
+  if (isLoading) {
+    return (
+      <StepsWrapper stepHeaderCurrent={4} stepHeaderTotal={4} stepHeaderLabel="Your offer">
+        <LoadingSpinner label="Loading your offer details..." />
+      </StepsWrapper>
+    );
+  }
 
-  const { low, high } = getOfferPriceRange(terms.priceMultiplier);
+  if (error || !property || !selectedTerm) {
+    return (
+      <StepsWrapper stepHeaderCurrent={4} stepHeaderTotal={4} stepHeaderLabel="Your offer">
+        <div className="mt-8 rounded-2xl bg-red-50 p-6 text-center">
+          <p className="text-sm font-semibold text-red-800">
+            {error || "Unable to locate offer details."}
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="mt-4 rounded-full bg-slate-900 px-6 py-2 text-sm font-bold text-white hover:bg-slate-800"
+          >
+            Start Over
+          </button>
+        </div>
+      </StepsWrapper>
+    );
+  }
 
-  const timelineAdjustmentPct = Math.round((terms.priceMultiplier - 1) * 100);
+  const startingValue = property?.startingValue ?? STARTING_VALUE;
+  const conditionAdjustmentAmount = Math.round(
+    startingValue * (CONDITION_ADJUSTMENT_PCT / 100),
+  );
+  const estimatedValue = startingValue + conditionAdjustmentAmount;
+
+  const content = getOfferContent(selectedTerm);
+  const terms = selectedTerm;
+
+  const { low, high } = getOfferPriceRange(terms.priceMultiplier, estimatedValue);
+
   const timelineAdjustmentAmount = Math.round(
-    ESTIMATED_VALUE * (terms.priceMultiplier - 1),
+    estimatedValue * (terms.priceMultiplier - 1),
   );
 
   const detailBoxes = [
-    { label: "Closing date", value: terms.closingDate },
-    { label: "Inspection", value: terms.inspection },
+    {
+      label: "Closing date",
+      value: terms.closingDaysMax
+        ? `${terms.closingDaysMin}–${terms.closingDaysMax} days`
+        : `${terms.closingDaysMin} days`,
+    },
+    {
+      label: "Inspection",
+      value: terms.inspectionDescription ?? `${terms.inspectionDays}-day window`,
+    },
     ...FIXED_DETAILS,
   ];
 
@@ -93,7 +139,7 @@ export const OfferPage = () => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-900">Starting value:</span>
               <span className="text-base font-bold text-slate-900">
-                {formatCurrency(STARTING_VALUE)}
+                {formatCurrency(startingValue)}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -108,8 +154,8 @@ export const OfferPage = () => {
                 }`}
               >
                 {CONDITION_ADJUSTMENT_PCT > 0 ? "+" : ""}
-                {CONDITION_ADJUSTMENT_PCT}% ({ADJUSTMENT_AMOUNT > 0 ? "+" : ""}
-                {formatCurrency(ADJUSTMENT_AMOUNT)})
+                {CONDITION_ADJUSTMENT_PCT}% ({conditionAdjustmentAmount > 0 ? "+" : ""}
+                {formatCurrency(conditionAdjustmentAmount)})
               </span>
             </div>
             <div className="flex items-center justify-between">

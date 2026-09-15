@@ -1,66 +1,159 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
-import { useRequireStep } from "../hooks/useRequireStep";
-import type { TimelineOption } from "../types/timeline";
+import type { OfferTerm } from "@pvt/shared";
+import { propertyService } from "../services/property.service";
+import { useEffect, useState } from "react";
+import { offerTermsService } from "../services/offer-terms.service";
+import { LoadingSpinner } from "../components/Loading";
 
-type TimelineStep = {
-  id: TimelineOption;
-  label: string;
-  sublabel?: string;
+// type TimelineStep = {
+//   id: TimelineOption;
+//   label: string;
+//   sublabel?: string;
+// };
+
+// const TIMELINE_STEPS: TimelineStep[] = [
+//   { id: "asap", label: "ASAP" },
+//   { id: "3-months", label: "Within", sublabel: "3 months" },
+//   { id: "12-months", label: "Within", sublabel: "12 months" },
+// ];
+
+const formatClosingDaysLabel = (key: string): { label: string; sublabel?: string } => {
+  if (key === "asap") return { label: "ASAP" };
+  return { label: "Within", sublabel: key };
 };
 
-const TIMELINE_STEPS: TimelineStep[] = [
-  { id: "asap", label: "ASAP" },
-  { id: "3-months", label: "Within", sublabel: "3 months" },
-  { id: "12-months", label: "Within", sublabel: "12 months" },
-];
+const formatTermContent = (term: OfferTerm) => {
+  const discountPct = Math.round((1 - term.priceMultiplier) * 100);
+  
+  if (discountPct >= 15) {
+    return {
+      eyebrow: "Fastest way out",
+      title: `Cash in your hand in ${term.closingDaysMin} days.`,
+      description: `${term.inspectionDescription || "Waived inspection"}. Speed costs about ${discountPct}% of market value — that is the trade, stated plainly.`,
+    };
+  }
 
-const TIMELINE_CONTENT: Record<
-  TimelineOption,
-  { eyebrow: string; title: string; description: string }
-> = {
-  asap: {
-    eyebrow: "Fastest way out",
-    title: "Cash in your hand in seven days.",
-    description:
-      "We waive the inspection, cover every repair, and close on whatever day you name. Speed costs about twenty percent of market — that is the trade, stated plainly.",
-  },
-  "3-months": {
-    eyebrow: "Middle ground",
-    title: "A thirty-day close, a short look.",
-    description:
-      "Five business days of due diligence, then we close. You give up a little speed and pick up most of the difference in price.",
-  },
-  "12-months": {
+  if (discountPct > 0) {
+    return {
+      eyebrow: "Middle ground",
+      title: `A ${term.closingDaysMin}-day close, short look.`,
+      description: `${term.inspectionDescription || `${term.inspectionDays}-day inspection`}, then we close. You give up a little speed and pick up most of the difference in price.`,
+    };
+  }
+
+  return {
     eyebrow: "Top of the range",
     title: "Full value, on a normal timeline.",
-    description:
-      "A standard close with a ten-day due diligence window. You wait the longest and you get the highest number we can write.",
-  },
+    description: `A standard close with a ${term.inspectionDays}-day due diligence window. You wait the longest and get the highest offer number.`,
+  };
 };
 
 export const TimelinePage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { timeline: selection, setTimeline: setSelection } = useValuation();
-  useRequireStep("timeline");
+  const { setProperty } = useValuation();
+  const [selectedTerm, setSelectedTerm] = useState<OfferTerm | null>();
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const selectedIndex =
-    selection === null
-      ? -1
-      : TIMELINE_STEPS.findIndex((step) => step.id === selection);
-  const content = selection ? TIMELINE_CONTENT[selection] : null;
+  useEffect(() => {
+    const fetchSelectedTerm = async () => {
+      if (!addressId) return;
 
-  const stepCount = TIMELINE_STEPS.length;
-  const trackInsetPct = 50 / stepCount;
-  const filledTrackPct =
-    selectedIndex > 0 ? (selectedIndex / stepCount) * 100 : 0;
 
-  const handleContinue = () => {
-    if (!selection) return;
-    navigate(`/addresses/${addressId}/contact`);
+      try {
+        const property = await propertyService.getById(addressId);
+        setProperty(property);
+
+        if (!property.offerTermsId) return;
+
+        const term = await offerTermsService.getById(property.offerTermsId);
+
+        if (term) {
+          setSelectedTerm(term);
+        }
+      } catch {
+        setSelectedTerm(null);
+      }
+    }
+
+    fetchSelectedTerm();
+  }, [addressId, setProperty]);
+
+  const [offerTerms, setOfferTerms] = useState<OfferTerm[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    offerTermsService
+      .getAll()
+      .then((terms) => {
+        if (isMounted) {
+          const sorted = [...terms].sort((a, b) => a.priceMultiplier - b.priceMultiplier);
+          setOfferTerms(sorted);
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          console.error("Failed to load offer terms:", err);
+          setError("Failed to load offer terms. Please try again.");
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const selectedIndex = selectedTerm ? offerTerms.findIndex((term) => term.id === selectedTerm.id) : -1;
+  const content = selectedTerm ? formatTermContent(selectedTerm) : null;
+
+  const stepCount = offerTerms.length;
+  const trackInsetPct = stepCount > 0 ? 50 / stepCount : 0;
+  const filledTrackPct = selectedIndex > 0 && stepCount > 0 ? (selectedIndex / (stepCount - 1)) * (100 - trackInsetPct * 2) : 0;
+
+  const handleContinue = async () => {
+    if (!selectedTerm || !addressId || isSaving) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      await propertyService.update(addressId, {
+        offerTermsId: selectedTerm.id,
+      });
+      navigate(`/addresses/${addressId}/contact`);
+    } catch (error) {
+      console.error("Failed to save selected offer term:", error);
+      setSaveError("We couldn't save your timeline. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+
+  if (isLoading) {
+    return (
+      <StepsWrapper stepHeaderCurrent={3} stepHeaderTotal={4} stepHeaderLabel="Step 3 of 4 · Timeline">
+        {/* <div className="mt-12 text-center text-slate-500">Loading offer terms...</div> */}
+        <LoadingSpinner label="Loading offer terms..."/>
+      </StepsWrapper>
+    );
+  }
+
+  if (error) {
+    return (
+      <StepsWrapper stepHeaderCurrent={3} stepHeaderTotal={4} stepHeaderLabel="Step 3 of 4 · Timeline">
+        <div className="mt-12 text-center text-red-500">{error}</div>
+      </StepsWrapper>
+    );
+  }
 
   return (
     <StepsWrapper
@@ -86,46 +179,57 @@ export const TimelinePage = () => {
               className="absolute top-1/2 h-0.5 -translate-y-1/2 bg-custom-yellow transition-all duration-300"
               style={{ left: `${trackInsetPct}%`, width: `${filledTrackPct}%` }}
             />
+            <div
+              className="relative grid"
+              style={{ gridTemplateColumns: `repeat(${stepCount}, minmax(0, 1fr))` }}
+            >
+              {offerTerms.map((term) => {
+                const { label, sublabel } = formatClosingDaysLabel(term.key);
+                const isSelected = selectedTerm?.id === term.id;
 
-            <div className="relative grid grid-cols-3">
-              {TIMELINE_STEPS.map((step) => (
-                <div key={step.id} className="flex justify-center">
-                  <button
-                    type="button"
-                    onClick={() => setSelection(step.id)}
-                    aria-pressed={selection === step.id}
-                    aria-label={`${step.label}${step.sublabel ? ` ${step.sublabel}` : ""}`}
-                    className={`h-5 w-5 shrink-0 rounded-full bg-white transition-colors ${
-                      selection === step.id
-                        ? "border-[3px] border-custom-yellow"
-                        : "border-2 border-blue-200"
-                    }`}
-                  />
-                </div>
-              ))}
+                return (
+                  <div key={term.id} className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTerm(term)}
+                      aria-pressed={isSelected}
+                      aria-label={`${label}${sublabel ? ` ${sublabel}` : ""}`}
+                      className={`h-5 w-5 shrink-0 rounded-full bg-white transition-colors ${
+                        isSelected
+                          // ? "border-[3px] border-custom-yellow"
+                          ? "border-[3px] border-custom-yellow"
+                          : "border-2 border-blue-200"
+                      }`}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
 
           <div className="mt-2 grid grid-cols-3 text-xs">
-            {TIMELINE_STEPS.map((step) => (
-              <div
-                key={step.id}
-                className={`text-center ${
-                  selection === step.id
-                    ? "font-bold text-slate-900"
-                    : "text-slate-500"
-                }`}
-              >
-                {step.sublabel ? (
-                  <>
-                    <div>{step.label}</div>
-                    <div>{step.sublabel}</div>
-                  </>
-                ) : (
-                  step.label
-                )}
-              </div>
-            ))}
+            {offerTerms.map((term) => {
+              const { label, sublabel } = formatClosingDaysLabel(term.key);
+              const isSelected = selectedTerm?.id === term.id;
+
+              return (
+                <div
+                  key={term.id}
+                  className={`text-center ${
+                    isSelected ? "font-bold text-slate-900" : "text-slate-500"
+                  }`}
+                >
+                  {sublabel ? (
+                    <>
+                      <div>{label}</div>
+                      <div>{sublabel}</div>
+                    </>
+                  ) : (
+                    label
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -154,13 +258,16 @@ export const TimelinePage = () => {
         <button
           type="button"
           onClick={handleContinue}
-          disabled={!selection}
+          disabled={!selectedTerm || isSaving}
           className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-[#E8F4FD] disabled:opacity-50"
         >
-          Continue
+          {isSaving ? "Saving..." : "Continue"}
         </button>
+        {saveError && (
+          <p className="mt-2 text-center text-xs text-red-600">{saveError}</p>
+        )}
         <p className="mt-2 text-center text-xs text-slate-500">
-          {selection ? "You can move this later." : "Pick one to continue."}
+          {selectedTerm ? "You can move this later." : "Pick one to continue."}
         </p>
       </div>
     </StepsWrapper>

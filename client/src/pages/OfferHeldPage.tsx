@@ -2,13 +2,18 @@ import { useNavigate, useParams } from "react-router-dom";
 import { CheckIcon } from "../components/icons";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
+import { useOfferData } from "../hooks/useOfferData";
 import { useRequireStep } from "../hooks/useRequireStep";
-import { formatCurrency } from "../utils/estimate";
 import {
-  DEFAULT_TIMELINE,
-  TIMELINE_OFFER_TERMS,
+  formatCurrency,
+} from "../utils/estimate";
+import {
+  formatOfferTermsSummary,
   getOfferPriceRange,
 } from "../utils/offerTerms";
+import { useEffect, useState } from "react";
+import { propertyService } from "../services/property.service";
+import { LoadingSpinner } from "../components/Loading";
 
 const WHAT_HAPPENS_NEXT = [
   {
@@ -29,16 +34,99 @@ const WHAT_HAPPENS_NEXT = [
 export const OfferHeldPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property, photos, timeline, reset } = useValuation();
+  const { photos, reset } = useValuation();
+  const {
+    property,
+    selectedTerm,
+    isLoading: isOfferLoading,
+    error: offerError,
+  } = useOfferData(addressId);
+  const [estimatedPrice, setEstimatedPrice] = useState<number>(0);
+  const [isEstimating, setIsEstimating] = useState<boolean>(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
   useRequireStep("offer");
 
-  const locationLabel = property
-    ? `${property.addressLine1}, ${property.city}`
-    : `Property #${addressId}`;
-  const referenceId = property?.id ?? addressId;
+  useEffect(() => {
+    let isMounted = true;
 
-  const terms = TIMELINE_OFFER_TERMS[timeline ?? DEFAULT_TIMELINE];
-  const { low, high } = getOfferPriceRange(terms.priceMultiplier);
+    const fetchEstimatedPrice = async () => {
+      if (!property?.id) return;
+
+      try {
+        setIsEstimating(true);
+        const { estimatedPrice: totalPrice } = await propertyService.estimatePrice(property.id);
+        if (isMounted) {
+          setEstimatedPrice(totalPrice);
+        }
+      } catch (err) {
+        console.error("Failed to estimate price:", err);
+        if (isMounted) {
+          setFetchError("Failed to estimate property value.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsEstimating(false);
+        }
+      }
+    };
+
+    fetchEstimatedPrice();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [property?.id]);
+
+  const isLoading = isOfferLoading || isEstimating;
+
+  if (isLoading) {
+    return (
+      <StepsWrapper
+        stepHeaderCurrent={4}
+        stepHeaderTotal={4}
+        stepHeaderLabel="Offer held"
+      >
+        <LoadingSpinner label="Loading your offer details..." />
+      </StepsWrapper>
+    );
+  }
+
+  const errorMessage = fetchError || offerError;
+
+  if (errorMessage || !property) {
+    return (
+      <StepsWrapper
+        stepHeaderCurrent={4}
+        stepHeaderTotal={4}
+        stepHeaderLabel="Offer held"
+      >
+        <div className="mt-8 rounded-2xl bg-red-50 p-6 text-center">
+          <p className="text-sm font-semibold text-red-800">
+            {errorMessage || "Unable to locate property records."}
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="mt-4 rounded-full bg-slate-900 px-6 py-2 text-sm font-bold text-white hover:bg-slate-800"
+          >
+            Start Over
+          </button>
+        </div>
+      </StepsWrapper>
+    );
+  }
+
+  const { low, high } = getOfferPriceRange(
+    selectedTerm?.priceMultiplier ?? 1,
+    estimatedPrice
+  );
+
+  const locationLabel = `${property.addressLine1}, ${property.city}`;
+  const referenceId = property.id;
+  const termsSummaryText = selectedTerm
+    ? formatOfferTermsSummary(selectedTerm)
+    : "Standard Terms";
 
   return (
     <StepsWrapper
@@ -65,7 +153,7 @@ export const OfferHeldPage = () => {
               <p>
                 {photos.length} photo{photos.length === 1 ? "" : "s"}
               </p>
-              <p>{terms.summary}</p>
+              <p>{termsSummaryText}</p>
             </div>
             <p className="text-right text-xl font-bold text-slate-900">
               {formatCurrency(low)}–{high.toLocaleString("en-US")}
