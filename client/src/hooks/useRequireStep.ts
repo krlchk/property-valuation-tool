@@ -14,14 +14,17 @@ const STEP_DEPTH: Record<RequiredStep, number> = {
 export const useRequireStep = (requiredStep: RequiredStep) => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property, photos, timeline, contact } = useValuation();
+  const { property, photos, selectedTerm, contact } = useValuation();
 
   const base = `/addresses/${addressId}`;
 
   const prerequisites = [
     { satisfied: Boolean(property), redirectTo: "/" },
     { satisfied: photos.length > 0, redirectTo: `${base}/photos` },
-    { satisfied: Boolean(timeline), redirectTo: `${base}/timeline` },
+    {
+      satisfied: Boolean(selectedTerm || property?.offerTermsId),
+      redirectTo: `${base}/timeline`,
+    },
     {
       satisfied: Boolean(
         contact.name && contact.phone && contact.email && contact.agreed,
