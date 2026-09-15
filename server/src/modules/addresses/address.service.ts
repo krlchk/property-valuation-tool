@@ -12,7 +12,7 @@ export class IncompleteAddressError extends Error {}
 type GooglePlacePrediction = {
   placeId: string;
   text?: { text: string };
-  types?: string [];
+  // types?: string [];
 };
 
 type GooglePlacesAutocompleteResponse = {
@@ -38,12 +38,11 @@ export const searchAddresses = async (query: string): Promise<AddressSuggestion[
       "Content-Type": "application/json",
       "X-Goog-Api-Key": apiKey,
       "X-Goog-FieldMask":
-        "suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.types",
+        "suggestions.placePrediction.placeId,suggestions.placePrediction.text",
     },
     body: JSON.stringify({
       input: trimmedQuery,
       includedRegionCodes: ["US"],
-      includedPrimaryTypes: ["street_address", "subpremise", "premise"],
     }),
   });
 
@@ -53,14 +52,11 @@ export const searchAddresses = async (query: string): Promise<AddressSuggestion[
 
   const data = (await response.json()) as GooglePlacesAutocompleteResponse;
 
-  console.log((data.suggestions ?? []).map((item) => item.placePrediction?.types))
+  // console.log((data.suggestions ?? []).map((item) => item.placePrediction?.types))
 
   return (data.suggestions ?? [])
     .map((suggestion) => suggestion.placePrediction)
     .filter((prediction): prediction is GooglePlacePrediction => Boolean(prediction))
-    .filter((prediction) => {
-      return !(prediction.types ?? []).some((type) => EXCLUDED_PROPERTIES.has(type));
-    })
     .map((prediction) => ({
       id: prediction.placeId,
       label: prediction.text?.text ?? "",

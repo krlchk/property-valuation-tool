@@ -118,6 +118,7 @@ export const deleteOfferTerms = async (id: number): Promise<boolean> => {
 function mapToOfferTermsResponse (data: Record<string, any>): OfferTerm {
   return {
     id: data.id,
+    key: data.key,
     priceMultiplier: Number(data.price_multiplier),
     closingDaysMin: data.closing_days_min,
     closingDaysMax: data.closing_days_max ?? null,
