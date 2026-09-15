@@ -74,7 +74,7 @@ export const StepsWrapper = ({
       <main className="mt-3 rounded-3xl border border-gray-200">
         <div className="flex items-center justify-between rounded-t-3xl bg-blue-100 px-7 py-3">
           <div>
-            <p className="text-sm font-bold text-brand-navy">instacashly</p>
+            <p className="text-sm font-bold text-brand-navy">Instacashly</p>
             <p className="text-caption tracking-wider text-brand-navy-muted uppercase">
               Buying in Dallas–Fort Worth
             </p>
@@ -103,7 +103,7 @@ export const StepsWrapper = ({
       </main>
 
       <p className="mt-5 text-[10.5px] text-gray-400">
-        instacashly buys houses and land in Dallas–Fort Worth. Offers are
+        Instacashly buys houses and land in Dallas–Fort Worth. Offers are
         estimates until confirmed in writing.
       </p>
     </div>

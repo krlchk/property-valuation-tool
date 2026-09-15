@@ -138,7 +138,7 @@ export const ContactPage = () => {
           <span className="text-sm text-slate-700">
             Yes, I understand and agree to the{" "}
             <span className="text-custom-blue underline">
-              instacashly Terms of Use
+              Instacashly Terms of Use
             </span>{" "}
             and{" "}
             <span className="text-custom-blue underline">Privacy Policy</span>.
