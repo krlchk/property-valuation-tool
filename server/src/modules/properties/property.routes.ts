@@ -12,5 +12,5 @@ export const propertyRouter = Router();
 propertyRouter.get("/:id", getPropertyByIdController);
 propertyRouter.post("/", createPropertyController);
 propertyRouter.post("/estimate", estimatePropertyPriceController);
-propertyRouter.patch("/", updatePropertyController);
+propertyRouter.patch("/:id", updatePropertyController);
 propertyRouter.delete("/:id", deletePropertyController);
