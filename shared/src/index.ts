@@ -29,11 +29,33 @@ export interface CreatePropertyRequest {
   city: string;
   state: string;
   postalCode: string;
+  startingValue: number;
 
   latitude?: number;
   longitude?: number;
   addressProvider?: string;
   providerPlaceId?: string;
+  offerTermsId?: number;
+}
+
+export interface UpdatePropertyRequest {
+  addressLine1?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+
+  latitude?: number | null;
+  longitude?: number | null;
+  addressProvider?: string | null;
+  providerPlaceId?: string | null;
+
+  squareFeet?: number | null;
+
+  startingValue?: number | null;
+  
+  offerTermsId?: number | null;
+
+  // status?: PropertyStatus | string;
 }
 
 export interface PropertyResponse {
@@ -50,15 +72,44 @@ export interface PropertyResponse {
   providerPlaceId: string | null;
 
   squareFeet: number | null;
-  bedrooms: number | null;
-  bathrooms: number | null;
 
-  startingValue: number | null;
-  startingValueSource: string | null;
+  startingValue: number;
 
-  timeline: string | null;
+  offerTermsId: number | null;
   status: string;
 
   createdAt: string;
   updatedAt: string;
+}
+
+export interface EstimatePropertyRequest {
+  prorpId: string;
+}
+
+// Offer Terms
+export interface OfferTerm {
+  id: number;
+  priceMultiplier: number;
+  closingDaysMin: number;
+  closingDaysMax: number | null;
+  inspectionDays: number;
+  inspectionDescription: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateOfferTermsRequest {
+  priceMultiplier: number;
+  closingDaysMin: number;
+  closingDaysMax?: number | null;
+  inspectionDays: number;
+  inspectionDescription?: string | null;
+}
+
+export interface UpdateOfferTermsRequest {
+  priceMultiplier?: number;
+  closingDaysMin?: number;
+  closingDaysMax?: number | null;
+  inspectionDays?: number;
+  inspectionDescription?: string | null;
 }
