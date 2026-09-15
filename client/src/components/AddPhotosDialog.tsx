@@ -40,9 +40,10 @@ export const AddPhotosDialog = ({
 
   const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
     const picked = event.target.files ? Array.from(event.target.files) : [];
-    const unique = dedupeFiles(picked, existingPhotos);
+    const unique = dedupeFiles([...files, ...picked], existingPhotos);
+    const newlyAccepted = unique.length - files.length;
 
-    const duplicateCount = picked.length - unique.length;
+    const duplicateCount = picked.length - newlyAccepted;
     setDuplicateNotice(
       duplicateCount === 0
         ? null
@@ -52,6 +53,9 @@ export const AddPhotosDialog = ({
     );
 
     setFiles(unique.slice(0, remainingSlots));
+    // Allow the user to choose the same file again after removing it from
+    // the pending selection.
+    event.currentTarget.value = "";
   };
 
   // MVP: category list is fixed (see PHOTO_CATEGORIES in PropertyPhotosPage).
