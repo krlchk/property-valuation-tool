@@ -29,6 +29,8 @@ const PHOTO_CATEGORIES = [
   "Deck",
 ];
 
+const DIRECT_PHOTOS_MAILTO = "mailto:photos@example.com";
+
 export const PropertyPhotosPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
@@ -210,7 +212,12 @@ export const PropertyPhotosPage = () => {
           </p>
         </div>
 
-        <div className="mt-6 flex items-center justify-center gap-4 rounded-3xl border-2 border-slate-900 p-4 transition-colors hover:bg-custom-yellow">
+        <a
+          href={DIRECT_PHOTOS_MAILTO}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-6 flex items-center justify-center gap-4 rounded-3xl border-2 border-slate-900 p-4 transition-colors hover:bg-custom-yellow active:bg-custom-yellow"
+        >
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-custom-yellow">
             <ArrowUpIcon className="h-5 w-5 text-slate-900" />
           </span>
@@ -223,7 +230,7 @@ export const PropertyPhotosPage = () => {
               condition.
             </p>
           </div>
-        </div>
+        </a>
 
         <button
           type="button"
