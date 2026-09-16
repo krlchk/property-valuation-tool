@@ -14,6 +14,7 @@ import {
 import { useEffect, useState } from "react";
 import { propertyService } from "../services/property.service";
 import { LoadingSpinner } from "../components/Loading";
+import { ErrorState } from "../components/Error";
 
 const WHAT_HAPPENS_NEXT = [
   {
@@ -101,18 +102,11 @@ export const OfferHeldPage = () => {
         stepHeaderTotal={4}
         stepHeaderLabel="Offer held"
       >
-        <div className="mt-8 rounded-2xl bg-red-50 p-6 text-center">
-          <p className="text-sm font-semibold text-red-800">
-            {errorMessage || "Unable to locate property records."}
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="mt-4 rounded-full bg-slate-900 px-6 py-2 text-sm font-bold text-white hover:bg-slate-800"
-          >
-            Start Over
-          </button>
-        </div>
+        <ErrorState
+          message={errorMessage || "Unable to locate property records."}
+          actionLabel="Start Over"
+          onAction={() => navigate("/")}
+        />
       </StepsWrapper>
     );
   }

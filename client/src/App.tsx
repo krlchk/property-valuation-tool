@@ -9,29 +9,20 @@ import {
   RepairBreakdownPage,
   TimelinePage,
 } from "./pages";
+import { PropertyFlowLayout } from "./layouts/PropertyFlowLayout";
 
 const App = () => (
   <Routes>
     <Route element={<AddressPage />} path="/" />
-    <Route
-      element={<PropertyPhotosPage />}
-      path="/addresses/:addressId/photos"
-    />
-    <Route
-      element={<TimelinePage />}
-      path="/addresses/:addressId/timeline"
-    />
-    <Route element={<ContactPage />} path="/addresses/:addressId/contact" />
-    <Route element={<AnalyzingPage />} path="/addresses/:addressId/analyzing" />
-    <Route element={<OfferPage />} path="/addresses/:addressId/offer" />
-    <Route
-      element={<RepairBreakdownPage />}
-      path="/addresses/:addressId/offer/breakdown"
-    />
-    <Route
-      element={<OfferHeldPage />}
-      path="/addresses/:addressId/offer/held"
-    />
+    <Route element={<PropertyFlowLayout />} path="/addresses/:addressId">
+      <Route element={<PropertyPhotosPage />} path="photos" />
+      <Route element={<TimelinePage />} path="timeline" />
+      <Route element={<ContactPage />} path="contact" />
+      <Route element={<AnalyzingPage />} path="analyzing" />
+      <Route element={<OfferPage />} path="offer" />
+      <Route element={<RepairBreakdownPage />} path="offer/breakdown" />
+      <Route element={<OfferHeldPage />} path="offer/held" />
+    </Route>
   </Routes>
 );
 

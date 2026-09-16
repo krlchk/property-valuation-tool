@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { LoadingSpinner } from "../components/Loading";
+import { ErrorState } from "../components/Error";
 import { useOfferData } from "../hooks/useOfferData";
 import { useRequireStep } from "../hooks/useRequireStep";
 import type { OfferTerm } from "@pvt/shared";
@@ -21,8 +22,6 @@ const FIXED_DETAILS = [
   { label: "Fees at closing", value: "$0" },
 ];
 
-// Page-specific copy per timeline — pricing/closing/inspection terms
-// themselves live in utils/offerTerms.ts, shared with OfferHeldPage.
 const getOfferContent = (term: OfferTerm) => {
   const timelineAdjustmentPct = Math.round((term.priceMultiplier - 1) * 100);
 
@@ -59,6 +58,7 @@ export const OfferPage = () => {
     isLoading,
     error,
   } = useOfferData(addressId);
+
   useRequireStep("offer");
 
   if (isLoading) {
@@ -72,18 +72,11 @@ export const OfferPage = () => {
   if (error || !property || !selectedTerm) {
     return (
       <StepsWrapper stepHeaderCurrent={4} stepHeaderTotal={4} stepHeaderLabel="Your offer">
-        <div className="mt-8 rounded-2xl bg-red-50 p-6 text-center">
-          <p className="text-sm font-semibold text-red-800">
-            {error || "Unable to locate offer details."}
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="mt-4 rounded-full bg-slate-900 px-6 py-2 text-sm font-bold text-white hover:bg-slate-800"
-          >
-            Start Over
-          </button>
-        </div>
+        <ErrorState
+          message={error || "Unable to locate offer details."}
+          actionLabel="Start Over"
+          onAction={() => navigate("/")}
+        />
       </StepsWrapper>
     );
   }

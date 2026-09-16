@@ -8,9 +8,11 @@ export type ValuationContextType = {
   property: PropertyResponse | null;
   setProperty: (property: PropertyResponse) => void;
   selectedTerm: OfferTerm | null;
-  setSelectedTerm: (term: OfferTerm) => void;
+  setSelectedTerm: (term: OfferTerm | null) => void;
   photos: UploadedPhoto[];
   setPhotos: (photos: UploadedPhoto[]) => void;
+  hydratedPropertyId: string | null;
+  setHydratedPropertyId: (propertyId: string | null) => void;
   // timeline: TimelineOption | null;
   // setTimeline: (timeline: TimelineOption) => void;
   contact: ContactInfo;

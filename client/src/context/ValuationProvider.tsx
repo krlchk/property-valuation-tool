@@ -9,6 +9,7 @@ import { offerTermsService } from "../services/offer-terms.service";
 export const ValuationProvider = ({ children }: { children: ReactNode }) => {
   const [property, setProperty] = useState<PropertyResponse | null>(null);
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
+  const [hydratedPropertyId, setHydratedPropertyId] = useState<string | null>(null);
   const [selectedTerm, setSelectedTerm] = useState<OfferTerm | null>(null);
   const [contact, setContact] = useState<ContactInfo>(EMPTY_CONTACT);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -43,6 +44,7 @@ export const ValuationProvider = ({ children }: { children: ReactNode }) => {
   const reset = () => {
     setProperty(null);
     setPhotos([]);
+    setHydratedPropertyId(null);
     setSelectedTerm(null);
     setContact(EMPTY_CONTACT);
   };
@@ -54,6 +56,8 @@ export const ValuationProvider = ({ children }: { children: ReactNode }) => {
         setProperty,
         photos,
         setPhotos,
+        hydratedPropertyId,
+        setHydratedPropertyId,
         selectedTerm,
         setSelectedTerm,
         contact,

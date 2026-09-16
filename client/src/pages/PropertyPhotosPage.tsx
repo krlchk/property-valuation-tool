@@ -34,12 +34,11 @@ const DIRECT_PHOTOS_MAILTO = "mailto:photos@example.com";
 export const PropertyPhotosPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property, photos, setPhotos, fetchPropertyById } = useValuation();
+  const { property, photos, setPhotos } = useValuation();
 
   const [categories] = useState<string[]>(PHOTO_CATEGORIES); // setter unused while custom categories are off
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [viewingCategory, setViewingCategory] = useState<string | null>(null);
-  const [isLoadingPhotos, setIsLoadingPhotos] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const photosRef = useRef(photos);
@@ -47,37 +46,6 @@ export const PropertyPhotosPage = () => {
   useEffect(() => {
     photosRef.current = photos;
   }, [photos]);
-
-  useEffect(() => {
-    if (!addressId || property?.id === addressId) return;
-    void fetchPropertyById(addressId);
-  }, [addressId, property?.id, fetchPropertyById]);
-
-  useEffect(() => {
-    const propertyId = addressId;
-    if (!propertyId) return;
-
-    const controller = new AbortController();
-
-    propertyPhotosService
-      .getByPropertyId(propertyId, controller.signal)
-      .then((loadedPhotos) => {
-        if (!controller.signal.aborted) {
-          setPhotos(loadedPhotos);
-          setPhotoError(null);
-        }
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        console.error("Failed to fetch property photos:", error);
-        setPhotoError("Failed to load your property photos.");
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setIsLoadingPhotos(false);
-      });
-
-    return () => controller.abort();
-  }, [addressId, setPhotos]);
 
   useEffect(() => {
     return () => {
@@ -179,11 +147,9 @@ export const PropertyPhotosPage = () => {
       stepHeaderCurrent={2}
       stepHeaderTotal={4}
       stepHeaderLabel="Step 2 of 4 · Photos"
+      stepHeaderOnBack={() => navigate(`/?propertyId=${addressId}`)}
     >
       <div className="mt-5">
-        {isLoadingPhotos && (
-          <p className="mb-3 text-xs text-slate-500">Loading your photos...</p>
-        )}
         {photoError && (
           <p className="mb-3 rounded-xl bg-red-50 p-3 text-xs text-red-700">
             {photoError}
@@ -244,7 +210,7 @@ export const PropertyPhotosPage = () => {
         <button
           type="button"
           onClick={() => setDialogOpen(true)}
-          disabled={atLimit || isLoadingPhotos || isUploading}
+          disabled={atLimit || isUploading}
           className="mt-6 flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-custom-yellow bg-yellow-50 p-6 text-center transition-colors hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-custom-yellow text-slate-900">

@@ -1,11 +1,11 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { StepsWrapper } from "../components/StepsWrapper";
+import { ErrorState } from "../components/Error";
 import { useValuation } from "../context/ValuationContext";
 import type { OfferTerm } from "@pvt/shared";
 import { propertyService } from "../services/property.service";
 import { useEffect, useState } from "react";
 import { offerTermsService } from "../services/offer-terms.service";
-import { LoadingSpinner } from "../components/Loading";
 
 // type TimelineStep = {
 //   id: TimelineOption;
@@ -53,34 +53,9 @@ const formatTermContent = (term: OfferTerm) => {
 export const TimelinePage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { setProperty } = useValuation();
-  const [selectedTerm, setSelectedTerm] = useState<OfferTerm | null>();
+  const { selectedTerm, setSelectedTerm } = useValuation();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchSelectedTerm = async () => {
-      if (!addressId) return;
-
-
-      try {
-        const property = await propertyService.getById(addressId);
-        setProperty(property);
-
-        if (!property.offerTermsId) return;
-
-        const term = await offerTermsService.getById(property.offerTermsId);
-
-        if (term) {
-          setSelectedTerm(term);
-        }
-      } catch {
-        setSelectedTerm(null);
-      }
-    }
-
-    fetchSelectedTerm();
-  }, [addressId, setProperty]);
 
   const [offerTerms, setOfferTerms] = useState<OfferTerm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -137,20 +112,10 @@ export const TimelinePage = () => {
     }
   };
 
-
-  if (isLoading) {
-    return (
-      <StepsWrapper stepHeaderCurrent={3} stepHeaderTotal={4} stepHeaderLabel="Step 3 of 4 · Timeline">
-        {/* <div className="mt-12 text-center text-slate-500">Loading offer terms...</div> */}
-        <LoadingSpinner label="Loading offer terms..."/>
-      </StepsWrapper>
-    );
-  }
-
   if (error) {
     return (
       <StepsWrapper stepHeaderCurrent={3} stepHeaderTotal={4} stepHeaderLabel="Step 3 of 4 · Timeline">
-        <div className="mt-12 text-center text-red-500">{error}</div>
+        <ErrorState message={error} />
       </StepsWrapper>
     );
   }
@@ -169,6 +134,17 @@ export const TimelinePage = () => {
           This sets your terms. Speed costs money and patience earns it.
         </p>
 
+        {isLoading ? (
+          <div className="mt-6 animate-pulse rounded-2xl bg-blue-100 p-5">
+            <div className="h-3 w-3/4 rounded bg-blue-200" />
+            <div className="mt-6 h-2 rounded bg-blue-200" />
+            <div className="mt-5 grid grid-cols-3 gap-3">
+              <div className="h-3 rounded bg-blue-200" />
+              <div className="h-3 rounded bg-blue-200" />
+              <div className="h-3 rounded bg-blue-200" />
+            </div>
+          </div>
+        ) : (
         <div className="mt-6 rounded-2xl bg-blue-100 p-5">
           <div className="relative">
             <div
@@ -232,7 +208,16 @@ export const TimelinePage = () => {
             })}
           </div>
         </div>
+        )}
 
+        {isLoading ? (
+          <div className="mt-4 animate-pulse rounded-2xl bg-gray-100 p-5">
+            <div className="h-3 w-1/3 rounded bg-gray-200" />
+            <div className="mt-4 h-5 w-4/5 rounded bg-gray-200" />
+            <div className="mt-3 h-3 w-full rounded bg-gray-200" />
+            <div className="mt-2 h-3 w-5/6 rounded bg-gray-200" />
+          </div>
+        ) : (
         <div
           className={`mt-4 rounded-2xl p-5 ${
             content ? "bg-yellow-100" : "bg-gray-50"
@@ -254,11 +239,12 @@ export const TimelinePage = () => {
               : "Pick ASAP, three months, or twelve months. Each one writes a different offer, and you can change it later without starting over."}
           </p>
         </div>
+        )}
 
         <button
           type="button"
           onClick={handleContinue}
-          disabled={!selectedTerm || isSaving}
+          disabled={!selectedTerm || isLoading || isSaving}
           className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-[#E8F4FD] disabled:opacity-50"
         >
           {isSaving ? "Saving..." : "Continue"}

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type {
   AddressSuggestion,
   CreatePropertyRequest,
@@ -42,7 +42,8 @@ const toCreatePropertyInput = (
 
 export const AddressPage = () => {
   const navigate = useNavigate();
-  const { propertyId } = useParams<{propertyId: string}>();
+  const [searchParams] = useSearchParams();
+  const selectedPropertyId = searchParams.get("propertyId");
   const { property, setProperty, fetchPropertyById, reset } = useValuation();
 
   const [query, setQuery] = useState("");
@@ -82,18 +83,41 @@ export const AddressPage = () => {
   );
 
   useEffect(() => {
-    if(propertyId) {
-      fetchPropertyById(propertyId);
+    if (selectedPropertyId && property?.id !== selectedPropertyId) {
+      fetchPropertyById(selectedPropertyId);
     }
-  }, [propertyId]);
+  }, [selectedPropertyId, property?.id, fetchPropertyById]);
 
   useEffect(() => {
     if (!property) {
       setSelectedAddress(null);
       setPropertyPrice(null);
       setPriceInput("");
+      return;
     }
-  }, [property]);
+
+    if (selectedPropertyId && property.id !== selectedPropertyId) return;
+
+    setPropertyPrice(property.startingValue ?? null);
+    setPriceInput(
+      property.startingValue
+        ? property.startingValue.toLocaleString("en-US")
+        : "",
+    );
+
+    if (property.latitude != null && property.longitude != null) {
+      setSelectedAddress({
+        addressLine1: property.addressLine1,
+        city: property.city,
+        state: property.state,
+        postalCode: property.postalCode,
+        latitude: property.latitude,
+        longitude: property.longitude,
+        provider: (property.addressProvider as any) ?? "mock",
+        providerPlaceId: property.providerPlaceId ?? "",
+      });
+    }
+  }, [property, selectedPropertyId]);
 
   const trimmedQuery = query.trim();
   const queryTooShort = trimmedQuery.length < MIN_QUERY_LENGTH;
