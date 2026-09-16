@@ -69,8 +69,6 @@ export const createPropertyPhotoController = async (req: Request, res: Response)
     const uploaded = await uploadPropertyPhoto({
       propertyId,
       buffer: req.file.buffer,
-      contentType: req.file.mimetype,
-      originalName: req.file.originalname,
     });
 
     try {

@@ -1,26 +1,20 @@
 import { randomUUID } from "node:crypto";
-import path from "node:path";
 import { supabase } from "../../lib/supabase";
+import { processToWebp } from "./helpers/procces-file-upload";
 
 const PROPERTY_BUCKET =
   process.env.SUPABASE_BUCKET ?? "property-photos";
 
-const safeFileName = (name: string) => {
-  const extension = path.extname(name).toLowerCase().replace(/[^a-z0-9.]/g, "");
-  return `${randomUUID()}${extension}`;
-};
-
 export const uploadPropertyPhoto = async (input: {
   propertyId: string;
   buffer: Buffer;
-  contentType: string;
-  originalName: string;
 }) => {
-  const storagePath = `${input.propertyId}/${safeFileName(input.originalName)}`;
+  const buffer = await processToWebp(input.buffer);
+  const storagePath = `${input.propertyId}/${randomUUID()}.webp`;
   const bucket = supabase.storage.from(PROPERTY_BUCKET);
 
-  const { error } = await bucket.upload(storagePath, input.buffer, {
-    contentType: input.contentType,
+  const { error } = await bucket.upload(storagePath, buffer, {
+    contentType: "image/webp",
     upsert: false,
   });
 
@@ -33,6 +27,7 @@ export const uploadPropertyPhoto = async (input: {
     url: data.publicUrl,
   };
 };
+
 
 export const deletePropertyPhotoObject = async (storagePath: string) => {
   const { error } = await supabase.storage
