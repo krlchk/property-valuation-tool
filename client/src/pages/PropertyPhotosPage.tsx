@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AddPhotosDialog } from "../components/AddPhotosDialog";
 import { CategoryPhotosDialog } from "../components/CategoryPhotosDialog";
 import { CategoryTile } from "../components/CategoryTile";
+import { ImageLoader } from "../components/ImageLoader";
 import { ArrowUpIcon, PlusIcon } from "../components/icons";
 import { ProgressBar } from "../components/ProgressBar";
 import { StepsWrapper } from "../components/StepsWrapper";
@@ -31,25 +32,70 @@ const PHOTO_CATEGORIES = [
 
 const DIRECT_PHOTOS_MAILTO = "mailto:photos@example.com";
 
+const PropertyPhotosSkeleton = () => (
+  <div
+    aria-busy="true"
+    aria-label="Loading property photos"
+    className="animate-pulse"
+  >
+    <div className="h-12 w-4/5 rounded-xl bg-gray-200" />
+    <div className="mt-4 h-4 w-full rounded bg-gray-200" />
+    <div className="mt-2 h-4 w-3/4 rounded bg-gray-200" />
+
+    <div className="mt-6 flex flex-wrap gap-2">
+      {Array.from({ length: 8 }, (_, index) => (
+        <div key={index} className="h-8 w-20 rounded-full bg-blue-100" />
+      ))}
+    </div>
+
+    <div className="mt-6 h-28 rounded-2xl bg-blue-100" />
+    <div className="mt-6 h-40 rounded-2xl bg-yellow-50" />
+
+    <div className="mt-8 grid grid-cols-3 gap-3">
+      {Array.from({ length: 3 }, (_, index) => (
+        <div key={index} className="aspect-square rounded-2xl bg-gray-200" />
+      ))}
+    </div>
+
+    <div className="mt-6 h-32 rounded-2xl bg-yellow-100" />
+    <div className="mt-6 h-16 rounded-3xl bg-gray-200" />
+    <div className="mt-6 h-12 rounded-full bg-gray-200" />
+  </div>
+);
+
 export const PropertyPhotosPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property, photos, setPhotos } = useValuation();
+  const { hydratedPropertyId, property, photos, setPhotos } = useValuation();
 
   const [categories] = useState<string[]>(PHOTO_CATEGORIES); // setter unused while custom categories are off
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [viewingCategory, setViewingCategory] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [pendingPhotos, setPendingPhotos] = useState<UploadedPhoto[]>([]);
   const photosRef = useRef(photos);
+  const pendingPhotosRef = useRef(pendingPhotos);
 
   useEffect(() => {
     photosRef.current = photos;
   }, [photos]);
 
   useEffect(() => {
+    pendingPhotosRef.current = pendingPhotos;
+  }, [pendingPhotos]);
+
+  const clearPendingPhotos = () => {
+    for (const photo of pendingPhotosRef.current) {
+      if (photo.url.startsWith("blob:")) URL.revokeObjectURL(photo.url);
+    }
+    pendingPhotosRef.current = [];
+    setPendingPhotos([]);
+  };
+
+  useEffect(() => {
     return () => {
-      for (const photo of photosRef.current) {
+      for (const photo of [...photosRef.current, ...pendingPhotosRef.current]) {
         if (photo.url.startsWith("blob:")) URL.revokeObjectURL(photo.url);
       }
     };
@@ -88,6 +134,16 @@ export const PropertyPhotosPage = () => {
 
     setPhotoError(null);
     setIsUploading(true);
+    const pending = accepted.map((file, index): UploadedPhoto => ({
+      id: `pending-${Date.now()}-${index}`,
+      url: URL.createObjectURL(file),
+      name: file.name,
+      size: file.size,
+      lastModified: file.lastModified,
+      category,
+    }));
+    pendingPhotosRef.current = pending;
+    setPendingPhotos(pending);
 
     try {
       const results = await Promise.allSettled(
@@ -101,16 +157,25 @@ export const PropertyPhotosPage = () => {
             result.status === "fulfilled",
         )
         .map((result) => result.value);
-      const failed = results.some((result) => result.status === "rejected");
+      const failures = results.filter(
+        (result): result is PromiseRejectedResult => result.status === "rejected",
+      );
 
-      if (failed) {
+      if (failures.length > 0) {
+        console.error("Failed to upload property photo:", failures[0].reason);
         await Promise.allSettled(
           additions.map((photo) => propertyPhotosService.remove(photo.id)),
         );
-        setPhotoError("Some photos could not be uploaded. Please try again.");
+        setPhotoError(
+          failures[0].reason instanceof Error
+            ? failures[0].reason.message
+            : "Some photos could not be uploaded. Please try again.",
+        );
+        clearPendingPhotos();
         return;
       }
 
+      clearPendingPhotos();
       const next = [...photosRef.current, ...additions];
       setPhotos(next);
     } finally {
@@ -141,6 +206,23 @@ export const PropertyPhotosPage = () => {
   const usedCategories = categories.filter((category) =>
     photos.some((photo) => photo.category === category),
   );
+
+  const isHydrating = hydratedPropertyId !== addressId;
+
+  if (isHydrating) {
+    return (
+      <StepsWrapper
+        stepHeaderCurrent={2}
+        stepHeaderTotal={4}
+        stepHeaderLabel="Step 2 of 4 · Photos"
+        stepHeaderOnBack={() => navigate(`/?propertyId=${addressId}`)}
+      >
+        <div className="mt-5">
+          <PropertyPhotosSkeleton />
+        </div>
+      </StepsWrapper>
+    );
+  }
 
   return (
     <StepsWrapper
@@ -179,9 +261,11 @@ export const PropertyPhotosPage = () => {
         </ul>
 
         <div className="mt-6 rounded-2xl bg-blue-100 p-4">
-          <div className="flex items-center justify-between gap-2 text-sm font-semibold text-slate-800">
-            <span>Every photo tightens the offer</span>
-            <span className="text-slate-500">
+          <div className="flex flex-nowrap items-center justify-between gap-2 text-xs font-semibold text-slate-800 sm:text-sm">
+            <span className="min-w-0 flex-1 truncate whitespace-nowrap">
+              Every photo tightens the offer
+            </span>
+            <span className="shrink-0 whitespace-nowrap text-slate-500">
               {Math.min(photos.length, TARGET_PHOTOS)} / {TARGET_PHOTOS}
             </span>
           </div>
@@ -231,6 +315,37 @@ export const PropertyPhotosPage = () => {
                 : `${photos.length} added — tap to add more`}
           </span>
         </button>
+
+        {pendingPhotos.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              Processing photos
+            </h2>
+            <ul className="mt-4 grid grid-cols-3 gap-3">
+              {pendingPhotos.map((photo) => (
+                <li
+                  key={photo.id}
+                  className="overflow-hidden rounded-2xl bg-gray-100"
+                >
+                  <ImageLoader
+                    src={photo.url}
+                    alt={photo.name}
+                    processing
+                    processingLabel="Uploading..."
+                    className="aspect-square w-full object-cover"
+                  />
+                  <p className="truncate px-2 py-2 text-xs text-slate-600">
+                    {photo.category}
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-xs text-slate-500">
+              Uploading and optimizing your photos. You can continue when this
+              finishes.
+            </p>
+          </section>
+        )}
 
         {usedCategories.length > 0 && (
           <section className="mt-8">

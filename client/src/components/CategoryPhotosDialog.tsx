@@ -1,5 +1,6 @@
 import { Modal } from "./Modal";
 import { XIcon } from "./icons";
+import { ImageLoader } from "./ImageLoader";
 import type { UploadedPhoto } from "../types/photo";
 
 type CategoryPhotosDialogProps = {
@@ -28,7 +29,7 @@ export const CategoryPhotosDialog = ({
     <ul className="grid grid-cols-2 gap-2">
       {photos.map((photo) => (
         <li key={photo.id} className="relative">
-          <img
+          <ImageLoader
             src={photo.url}
             alt={photo.name}
             className="aspect-square w-full rounded-xl object-cover"

@@ -1,4 +1,5 @@
 import type { UploadedPhoto } from "../types/photo";
+import { ImageLoader } from "./ImageLoader";
 
 type CategoryTileProps = {
   category: string;
@@ -20,7 +21,7 @@ export const CategoryTile = ({
     aria-label={`${category}, ${photos.length}`}
     className="relative block w-full overflow-hidden rounded-2xl bg-gray-100"
   >
-    <img
+    <ImageLoader
       src={photos[0].url}
       alt=""
       className="aspect-square w-full object-cover"
