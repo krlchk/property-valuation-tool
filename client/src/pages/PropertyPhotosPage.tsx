@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AddPhotosDialog } from "../components/AddPhotosDialog";
 import { CategoryPhotosDialog } from "../components/CategoryPhotosDialog";
@@ -7,8 +7,8 @@ import { ArrowUpIcon, PlusIcon } from "../components/icons";
 import { ProgressBar } from "../components/ProgressBar";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
-import { useRequireStep } from "../hooks/useRequireStep";
 import { dedupeFiles } from "../utils/photoFiles";
+import { propertyPhotosService } from "../services/property-photos.service";
 import type { UploadedPhoto } from "../types/photo";
 
 const TARGET_PHOTOS = 10;
@@ -34,12 +34,58 @@ const DIRECT_PHOTOS_MAILTO = "mailto:photos@example.com";
 export const PropertyPhotosPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property, photos, setPhotos } = useValuation();
-  useRequireStep("photos");
+  const { property, photos, setPhotos, fetchPropertyById } = useValuation();
 
   const [categories] = useState<string[]>(PHOTO_CATEGORIES); // setter unused while custom categories are off
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [viewingCategory, setViewingCategory] = useState<string | null>(null);
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const photosRef = useRef(photos);
+
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+
+  useEffect(() => {
+    if (!addressId || property?.id === addressId) return;
+    void fetchPropertyById(addressId);
+  }, [addressId, property?.id, fetchPropertyById]);
+
+  useEffect(() => {
+    const propertyId = addressId;
+    if (!propertyId) return;
+
+    const controller = new AbortController();
+
+    propertyPhotosService
+      .getByPropertyId(propertyId, controller.signal)
+      .then((loadedPhotos) => {
+        if (!controller.signal.aborted) {
+          setPhotos(loadedPhotos);
+          setPhotoError(null);
+        }
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error("Failed to fetch property photos:", error);
+        setPhotoError("Failed to load your property photos.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoadingPhotos(false);
+      });
+
+    return () => controller.abort();
+  }, [addressId, setPhotos]);
+
+  useEffect(() => {
+    return () => {
+      for (const photo of photosRef.current) {
+        if (photo.url.startsWith("blob:")) URL.revokeObjectURL(photo.url);
+      }
+    };
+  }, []);
 
   const progress = Math.min(photos.length / TARGET_PHOTOS, 1);
   const coveragePct = Math.round(progress * 100);
@@ -61,28 +107,62 @@ export const PropertyPhotosPage = () => {
   //   setCategories((prev) => [...prev, name]);
   // };
 
-  const handleAddPhotos = (files: File[], category: string) => {
+  const handleAddPhotos = async (files: File[], category: string) => {
+    const propertyId = property?.id ?? addressId;
+    if (!propertyId) {
+      setPhotoError("Unable to identify this property.");
+      return;
+    }
+
     const room = Math.max(TARGET_PHOTOS - photos.length, 0);
     const accepted = dedupeFiles(files, photos).slice(0, room);
+    if (accepted.length === 0) return;
 
-    const additions: UploadedPhoto[] = accepted.map((file) => ({
-      id: crypto.randomUUID(),
-      url: URL.createObjectURL(file),
-      name: file.name,
-      size: file.size,
-      lastModified: file.lastModified,
-      category,
-    }));
+    setPhotoError(null);
+    setIsUploading(true);
 
-    const next = [...photos, ...additions];
-    setPhotos(next);
+    try {
+      const results = await Promise.allSettled(
+        accepted.map((file) =>
+          propertyPhotosService.upload(propertyId, file, category),
+        ),
+      );
+      const additions = results
+        .filter(
+          (result): result is PromiseFulfilledResult<UploadedPhoto> =>
+            result.status === "fulfilled",
+        )
+        .map((result) => result.value);
+      const failed = results.some((result) => result.status === "rejected");
+
+      if (failed) {
+        await Promise.allSettled(
+          additions.map((photo) => propertyPhotosService.remove(photo.id)),
+        );
+        setPhotoError("Some photos could not be uploaded. Please try again.");
+        return;
+      }
+
+      const next = [...photosRef.current, ...additions];
+      setPhotos(next);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleDeletePhoto = (id: string) => {
-    const target = photos.find((photo) => photo.id === id);
-    if (target) URL.revokeObjectURL(target.url);
+  const handleDeletePhoto = async (id: string) => {
+    try {
+      await propertyPhotosService.remove(id);
+    } catch (error) {
+      console.error("Failed to delete property photo:", error);
+      setPhotoError("Failed to delete the photo. Please try again.");
+      return;
+    }
 
-    const next = photos.filter((photo) => photo.id !== id);
+    const target = photosRef.current.find((photo) => photo.id === id);
+    if (target?.url.startsWith("blob:")) URL.revokeObjectURL(target.url);
+
+    const next = photosRef.current.filter((photo) => photo.id !== id);
     setPhotos(next);
 
     if (viewingCategory && !next.some((p) => p.category === viewingCategory)) {
@@ -101,12 +181,20 @@ export const PropertyPhotosPage = () => {
       stepHeaderLabel="Step 2 of 4 · Photos"
     >
       <div className="mt-5">
+        {isLoadingPhotos && (
+          <p className="mb-3 text-xs text-slate-500">Loading your photos...</p>
+        )}
+        {photoError && (
+          <p className="mb-3 rounded-xl bg-red-50 p-3 text-xs text-red-700">
+            {photoError}
+          </p>
+        )}
         <h1 className="font-serif text-hero leading-[1.15]">
           Add 10 photos of your property
         </h1>
 
         <p className="mt-3 text-body-sm text-slate-600">
-          {locationLabel} — the first 10 photos are what our AI grades, so
+          {locationLabel} — the first {TARGET_PHOTOS} photos are what our AI grades, so
           cover the whole place.
         </p>
 
@@ -156,14 +244,18 @@ export const PropertyPhotosPage = () => {
         <button
           type="button"
           onClick={() => setDialogOpen(true)}
-          disabled={atLimit}
+          disabled={atLimit || isLoadingPhotos || isUploading}
           className="mt-6 flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-custom-yellow bg-yellow-50 p-6 text-center transition-colors hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-custom-yellow text-slate-900">
             <PlusIcon className="h-6 w-6" />
           </span>
           <span className="text-sm font-semibold text-slate-900">
-            {atLimit ? "Photo limit reached" : "Tap to add photos"}
+            {atLimit
+              ? "Photo limit reached"
+              : isUploading
+                ? "Uploading photos..."
+                : "Tap to add photos"}
           </span>
           <span className="text-xs text-slate-500">
             {atLimit
