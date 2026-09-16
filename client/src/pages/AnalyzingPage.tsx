@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CheckIcon } from "../components/icons";
+import { ErrorState } from "../components/Error";
 import { ProgressBar } from "../components/ProgressBar";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
 import { useRequireStep } from "../hooks/useRequireStep";
-
-// TODO: swap for the real AI processing time once that's wired up.
-const DURATION_MS = 10_000;
-const TICK_MS = 100;
+import { aiReviewService } from "../services/ai-review.service";
+import { propertyService } from "../services/property.service";
 
 const STEPS = [
   "Every photo read",
@@ -17,8 +16,8 @@ const STEPS = [
   "Writing your offer",
 ];
 
-const formatCountdown = (remainingMs: number) => {
-  const totalSeconds = Math.ceil(remainingMs / 1000);
+const formatElapsed = (elapsedMs: number) => {
+  const totalSeconds = Math.floor(elapsedMs / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
@@ -27,33 +26,92 @@ const formatCountdown = (remainingMs: number) => {
 export const AnalyzingPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { photos } = useValuation();
+
+  const {
+    property,
+    photos,
+    setConditionAdjustmentPct,
+    setEstimatedPrice,
+  } = useValuation();
+
   useRequireStep("offer");
 
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let elapsed = 0;
-    const id = setInterval(() => {
-      elapsed += TICK_MS;
-      if (elapsed >= DURATION_MS) {
-        clearInterval(id);
-        setElapsedMs(DURATION_MS);
+    if (!property?.id || !addressId) return;
+
+    let isMounted = true;
+    const startedAt = performance.now();
+    const timerId = window.setInterval(() => {
+      if (isMounted) setElapsedMs(performance.now() - startedAt);
+    }, 100);
+
+    const runAssessment = async () => {
+      setError(null);
+      setCompletedSteps(0);
+      setConditionAdjustmentPct(null);
+      setEstimatedPrice(null);
+
+      try {
+        const review = await aiReviewService.reviewPropertyById(property.id);
+        if (!isMounted) return;
+
+        setConditionAdjustmentPct(review.totalAdjustmentPct);
+        setCompletedSteps(2);
+
+        const estimate = await propertyService.estimatePrice({
+          propId: property.id,
+          conditionAdjustmentPct: review.totalAdjustmentPct,
+        });
+        if (!isMounted) return;
+
+        setEstimatedPrice(estimate.estimatedPrice);
+        setCompletedSteps(STEPS.length);
+        setElapsedMs(performance.now() - startedAt);
         navigate(`/addresses/${addressId}/offer`);
-        return;
+      } catch (requestError: unknown) {
+        if (!isMounted) return;
+
+        console.error("Failed to assess property:", requestError);
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to analyze this property. Please try again.",
+        );
       }
-      setElapsedMs(elapsed);
-    }, TICK_MS);
+    };
 
-    return () => clearInterval(id);
-  }, [addressId, navigate]);
+    void runAssessment();
 
-  const progressPct = (elapsedMs / DURATION_MS) * 100;
-  const remainingMs = DURATION_MS - elapsedMs;
-  const doneCount = Math.min(
-    Math.floor((elapsedMs / DURATION_MS) * STEPS.length),
-    STEPS.length,
-  );
+    return () => {
+      isMounted = false;
+      window.clearInterval(timerId);
+    };
+  }, [
+    addressId,
+    navigate,
+    property?.id,
+    setConditionAdjustmentPct,
+    setEstimatedPrice,
+  ]);
+
+  if (error) {
+    return (
+      <StepsWrapper
+        stepHeaderCurrent={4}
+        stepHeaderTotal={4}
+        stepHeaderLabel="Pricing your property"
+        stepHeaderHideBack
+      >
+        <ErrorState message={error} />
+      </StepsWrapper>
+    );
+  }
+
+  const progressPct = (completedSteps / STEPS.length) * 100;
 
   return (
     <StepsWrapper
@@ -69,7 +127,7 @@ export const AnalyzingPage = () => {
               Reading {photos.length} photo{photos.length === 1 ? "" : "s"}
             </p>
             <p className="font-mono text-2xl font-bold text-slate-900">
-              {formatCountdown(remainingMs)}
+              {formatElapsed(elapsedMs)}
             </p>
           </div>
           <ProgressBar percent={progressPct} className="mt-3" />
@@ -84,8 +142,8 @@ export const AnalyzingPage = () => {
 
         <ul aria-live="polite" className="mt-6 space-y-2">
           {STEPS.map((step, index) => {
-            const done = index < doneCount;
-            const active = index === doneCount;
+            const done = index < completedSteps;
+            const active = index === completedSteps;
             return (
               <li
                 key={step}

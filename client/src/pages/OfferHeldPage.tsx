@@ -35,14 +35,22 @@ const WHAT_HAPPENS_NEXT = [
 export const OfferHeldPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { photos, reset } = useValuation();
+  const {
+    photos,
+    reset,
+    conditionAdjustmentPct,
+    estimatedPrice: contextEstimatedPrice,
+    setEstimatedPrice: setContextEstimatedPrice,
+  } = useValuation();
   const {
     property,
     selectedTerm,
     isLoading: isOfferLoading,
     error: offerError,
   } = useOfferData(addressId);
-  const [estimatedPrice, setEstimatedPrice] = useState<number>(0);
+  const [estimatedPrice, setEstimatedPrice] = useState<number | null>(
+    contextEstimatedPrice,
+  );
   const [isEstimating, setIsEstimating] = useState<boolean>(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -54,11 +62,20 @@ export const OfferHeldPage = () => {
     const fetchEstimatedPrice = async () => {
       if (!property?.id) return;
 
+      if (contextEstimatedPrice !== null) {
+        setEstimatedPrice(contextEstimatedPrice);
+        return;
+      }
+
       try {
         setIsEstimating(true);
-        const { estimatedPrice: totalPrice } = await propertyService.estimatePrice(property.id);
+        const { estimatedPrice: totalPrice } = await propertyService.estimatePrice({
+          propId: property.id,
+          conditionAdjustmentPct: conditionAdjustmentPct ?? 0,
+        });
         if (isMounted) {
           setEstimatedPrice(totalPrice);
+          setContextEstimatedPrice(totalPrice);
         }
       } catch (err) {
         console.error("Failed to estimate price:", err);
@@ -77,9 +94,9 @@ export const OfferHeldPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [property?.id]);
+  }, [conditionAdjustmentPct, contextEstimatedPrice, property?.id, setContextEstimatedPrice]);
 
-  const isLoading = isOfferLoading || isEstimating;
+  const isLoading = isOfferLoading || isEstimating || estimatedPrice === null;
 
   if (isLoading) {
     return (
@@ -112,8 +129,8 @@ export const OfferHeldPage = () => {
   }
 
   const { low, high } = getOfferPriceRange(
-    selectedTerm?.priceMultiplier ?? 1,
-    estimatedPrice
+    1,
+    estimatedPrice,
   );
 
   const locationLabel = `${property.addressLine1}, ${property.city}`;

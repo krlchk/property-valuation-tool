@@ -53,7 +53,7 @@ const formatTermContent = (term: OfferTerm) => {
 export const TimelinePage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { selectedTerm, setSelectedTerm } = useValuation();
+  const { selectedTerm, setSelectedTerm, setProperty } = useValuation();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -100,9 +100,10 @@ export const TimelinePage = () => {
     setSaveError(null);
 
     try {
-      await propertyService.update(addressId, {
+      const updatedProperty = await propertyService.update(addressId, {
         offerTermsId: selectedTerm.id,
       });
+      setProperty(updatedProperty);
       navigate(`/addresses/${addressId}/contact`);
     } catch (error) {
       console.error("Failed to save selected offer term:", error);

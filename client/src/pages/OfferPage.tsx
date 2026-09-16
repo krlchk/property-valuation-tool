@@ -1,12 +1,16 @@
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { LoadingSpinner } from "../components/Loading";
 import { ErrorState } from "../components/Error";
 import { useOfferData } from "../hooks/useOfferData";
 import { useRequireStep } from "../hooks/useRequireStep";
+import { useValuation } from "../context/ValuationContext";
+import { aiReviewService } from "../services/ai-review.service";
+import { offersService } from "../services/offers.service";
+import { propertyService } from "../services/property.service";
 import type { OfferTerm } from "@pvt/shared";
 import {
-  CONDITION_ADJUSTMENT_PCT,
   STARTING_VALUE,
   formatCurrency,
 } from "../utils/estimate";
@@ -58,10 +62,95 @@ export const OfferPage = () => {
     isLoading,
     error,
   } = useOfferData(addressId);
+  const {
+    conditionAdjustmentPct,
+    setConditionAdjustmentPct,
+    estimatedPrice,
+    setEstimatedPrice,
+  } = useValuation();
+  const [isAssessing, setIsAssessing] = useState(false);
+  const [assessmentError, setAssessmentError] = useState<string | null>(null);
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
+  const assessmentKeyRef = useRef<string | null>(null);
 
   useRequireStep("offer");
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!property?.id || !selectedTerm) return;
+    if (conditionAdjustmentPct !== null && estimatedPrice !== null) return;
+
+    const assessmentKey = `${property.id}:${selectedTerm.id}`;
+    if (assessmentKeyRef.current === assessmentKey) return;
+    assessmentKeyRef.current = assessmentKey;
+
+    let isMounted = true;
+
+    const assessProperty = async () => {
+      setIsAssessing(true);
+      setAssessmentError(null);
+
+      try {
+        let adjustmentPct = conditionAdjustmentPct;
+
+        if (adjustmentPct === null) {
+          const review = await aiReviewService.reviewPropertyById(property.id);
+          if (!isMounted) return;
+
+          adjustmentPct = review.totalAdjustmentPct;
+          setConditionAdjustmentPct(adjustmentPct);
+        }
+
+        if (estimatedPrice === null) {
+          const estimate = await propertyService.estimatePrice({
+            propId: property.id,
+            conditionAdjustmentPct: adjustmentPct,
+          });
+          if (!isMounted) return;
+
+          setEstimatedPrice(estimate.estimatedPrice);
+        }
+      } catch (requestError: unknown) {
+        if (!isMounted) return;
+
+        console.error("Failed to assess property:", requestError);
+        setAssessmentError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to calculate your offer. Please try again.",
+        );
+      } finally {
+        if (isMounted) setIsAssessing(false);
+      }
+    };
+
+    void assessProperty();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    conditionAdjustmentPct,
+    estimatedPrice,
+    property?.id,
+    selectedTerm,
+    setConditionAdjustmentPct,
+    setEstimatedPrice,
+  ]);
+
+  if (error || assessmentError) {
+    return (
+      <StepsWrapper stepHeaderCurrent={4} stepHeaderTotal={4} stepHeaderLabel="Your offer">
+        <ErrorState
+          message={error || assessmentError || "Unable to calculate your offer."}
+          actionLabel="Start Over"
+          onAction={() => navigate("/")}
+        />
+      </StepsWrapper>
+    );
+  }
+
+  if (isLoading || isAssessing) {
     return (
       <StepsWrapper stepHeaderCurrent={4} stepHeaderTotal={4} stepHeaderLabel="Your offer">
         <LoadingSpinner label="Loading your offer details..." />
@@ -69,11 +158,11 @@ export const OfferPage = () => {
     );
   }
 
-  if (error || !property || !selectedTerm) {
+  if (!property || !selectedTerm || conditionAdjustmentPct === null || estimatedPrice === null) {
     return (
       <StepsWrapper stepHeaderCurrent={4} stepHeaderTotal={4} stepHeaderLabel="Your offer">
         <ErrorState
-          message={error || "Unable to locate offer details."}
+          message={error || assessmentError || "Unable to locate offer details."}
           actionLabel="Start Over"
           onAction={() => navigate("/")}
         />
@@ -82,30 +171,63 @@ export const OfferPage = () => {
   }
 
   const startingValue = property?.startingValue ?? STARTING_VALUE;
+  
   const conditionAdjustmentAmount = Math.round(
-    startingValue * (CONDITION_ADJUSTMENT_PCT / 100),
+    startingValue * (conditionAdjustmentPct / 100),
   );
+  
   const estimatedValue = startingValue + conditionAdjustmentAmount;
 
   const content = getOfferContent(selectedTerm);
-  const terms = selectedTerm;
 
-  const { low, high } = getOfferPriceRange(terms.priceMultiplier, estimatedValue);
+  const { low, high } = getOfferPriceRange(1, estimatedPrice);
 
   const timelineAdjustmentAmount = Math.round(
-    estimatedValue * (terms.priceMultiplier - 1),
+    estimatedValue * (selectedTerm.priceMultiplier - 1),
   );
+
+  const handleAcceptOffer = async () => {
+    if (isAccepting) return;
+
+    if (!property.userId) {
+      setAcceptError("We couldn't find your contact details. Please try again.");
+      return;
+    }
+
+    setIsAccepting(true);
+    setAcceptError(null);
+
+    try {
+      await offersService.create({
+        propertyId: property.id,
+        userId: property.userId,
+        minPrice: low,
+        maxPrice: high,
+        status: "accepted",
+      });
+      navigate(`/addresses/${addressId}/offer/held`);
+    } catch (requestError: unknown) {
+      console.error("Failed to accept offer:", requestError);
+      setAcceptError(
+        requestError instanceof Error
+          ? requestError.message
+          : "We couldn't accept your offer. Please try again.",
+      );
+    } finally {
+      setIsAccepting(false);
+    }
+  };
 
   const detailBoxes = [
     {
       label: "Closing date",
-      value: terms.closingDaysMax
-        ? `${terms.closingDaysMin}–${terms.closingDaysMax} days`
-        : `${terms.closingDaysMin} days`,
+      value: selectedTerm.closingDaysMax
+        ? `${selectedTerm.closingDaysMin}–${selectedTerm.closingDaysMax} days`
+        : `${selectedTerm.closingDaysMin} days`,
     },
     {
       label: "Inspection",
-      value: terms.inspectionDescription ?? `${terms.inspectionDays}-day window`,
+      value: selectedTerm.inspectionDescription ?? `${selectedTerm.inspectionDays}-day window`,
     },
     ...FIXED_DETAILS,
   ];
@@ -118,6 +240,12 @@ export const OfferPage = () => {
       stepHeaderOnBack={() => navigate(`/addresses/${addressId}/timeline`)}
     >
       <div className="mt-5">
+        {acceptError && (
+          <p className="mb-3 rounded-xl bg-red-50 p-3 text-xs text-red-700">
+            {acceptError}
+          </p>
+        )}
+
         <h1 className="font-serif text-hero leading-[1.15]">
           Here's your offer.
         </h1>
@@ -141,13 +269,13 @@ export const OfferPage = () => {
               </span>
               <span
                 className={`text-base font-bold ${
-                  CONDITION_ADJUSTMENT_PCT < 0
+                  conditionAdjustmentPct < 0
                     ? "text-rose-800"
                     : "text-emerald-800"
                 }`}
               >
-                {CONDITION_ADJUSTMENT_PCT > 0 ? "+" : ""}
-                {CONDITION_ADJUSTMENT_PCT}% ({conditionAdjustmentAmount > 0 ? "+" : ""}
+                {conditionAdjustmentPct > 0 ? "+" : ""}
+                {conditionAdjustmentPct}% ({conditionAdjustmentAmount > 0 ? "+" : ""}
                 {formatCurrency(conditionAdjustmentAmount)})
               </span>
             </div>
@@ -197,10 +325,11 @@ export const OfferPage = () => {
 
         <button
           type="button"
-          onClick={() => navigate(`/addresses/${addressId}/offer/held`)}
-          className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500"
+          onClick={handleAcceptOffer}
+          disabled={isAccepting}
+          className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Accept this offer
+          {isAccepting ? "Accepting offer..." : "Accept this offer"}
         </button>
 
         <button
