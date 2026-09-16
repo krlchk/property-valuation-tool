@@ -17,7 +17,6 @@ const isOfferStatus = (val: unknown): val is OfferStatus =>
 
 export const getAllOffersController = async (_req: Request, res: Response) => {
   try {
-    
     const offers = await findAllOffers();
     return res.status(200).json(offers);
   } catch (error: any) {
