@@ -18,19 +18,26 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
 const INSPECTOR_SYSTEM_PROMPT = `You are an expert residential real estate property condition inspector. Your job is to analyze photos of a house component and evaluate its visible physical condition.
 
-Grading Criteria:
+CRITICAL STEP 1 - IMAGE RELEVANCE & CONTENT VALIDATION:
+Before evaluating condition, inspect every image to verify if it depicts a real, real-estate photo of the target component.
+- If the photo contains non-real-estate content (e.g., cartoons, illustrations, memes, pets, people, generic objects, indoor scenes when inspecting exterior roofs/landscaping), you MUST set grade to "UNKNOWN".
+- Do NOT guess, hallucinate, or default to "FAIR" or "GOOD" for irrelevant or unidentifiable images.
+
+CRITICAL STEP 2 - GRADING CRITERIA (Only apply if photos depict the valid target component):
 - GOOD: Modern or updated appearance, well-maintained, minimal to no visible wear, no damage.
 - FAIR: Functional and usable, but dated appearance, showing moderate wear or minor cosmetic updates needed.
 - BAD: Heavily outdated, deteriorated, damaged, missing parts, or visibly in need of significant renovation.
-- UNKNOWN: The photo provided is blurry, obstructed, does not show the target component, or lacks sufficient visibility to evaluate confidently.
+- UNKNOWN: The photo provided is non-real-estate content, irrelevant to the target component, blurry, obstructed, or lacks sufficient visibility to evaluate.
+
 
 Rules:
 1. Grade ONLY visible physical condition. Never invent hidden defects (e.g., do not claim a roof leaks unless water damage or missing shingles are visibly apparent).
-2. If grade is GOOD, FAIR, or BAD, set recommended_action to null.
-3. If grade is UNKNOWN, provide a helpful recommended_action: "Upload higher quality or clearer photos for {{category}}.".
-4. Confidence must be a float between 0.00 and 1.00 representing your certainty. UNKNOWN confidence must be between 0.00 and 0.30.
-5. Provide a concise, clear reason in 1-2 sentences.
-6. Return only the requested JSON object.`;
+2. If grade is UNKNOWN because photos are irrelevant or non-real-estate images, set recommended_action to: "Uploaded photos appear irrelevant or do not show {{component}}. Please upload actual photos of the {{component}}."
+3. If grade is UNKNOWN due to quality/lighting, set recommended_action to: "Upload higher quality or clearer photos for {{component}}."
+4. If grade is GOOD, FAIR, or BAD, set recommended_action to null.
+5. Confidence must be a float between 0.00 and 1.00 representing your certainty. UNKNOWN confidence must be between 0.00 and 0.30. Set confidence between 0.00 and 0.10 for irrelevant/non-real-estate images.
+6. Provide a concise, clear reason in 1-2 sentences.
+7. Return only the requested JSON object.`;
 
 type AiReview = Omit<AIComponentEvaluation, "component" | "photoIds">;
 
@@ -148,6 +155,8 @@ const requestAiReview = async (
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("Missing OPENAI_API_KEY environment variable");
 
+  const systemPrompt = INSPECTOR_SYSTEM_PROMPT.replaceAll("{{component}}", component);
+
   const response = await fetch(OPENAI_API_URL, {
     method: "POST",
     headers: {
@@ -158,7 +167,7 @@ const requestAiReview = async (
       model: OPENAI_MODEL,
       temperature: 0,
       messages: [
-        { role: "system", content: INSPECTOR_SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         {
           role: "user",
           content: [
@@ -210,7 +219,9 @@ const requestAiReview = async (
   const data = (await response.json()) as {
     choices?: Array<{ message?: { content?: string | null } }>;
   };
+
   const content = data.choices?.[0]?.message?.content;
+  
   if (!content) throw new Error("OpenAI returned an empty review");
 
   const parsed = JSON.parse(content) as {
