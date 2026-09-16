@@ -99,24 +99,54 @@ export interface OfferTerm {
   updatedAt: string;
 }
 
-export type PropertyPhotoCategory =
-  | "Roof"
-  | "Exterior paint"
-  | "Windows"
-  | "Kitchen"
-  | "Bathrooms"
-  | "Floors"
-  | "Doors"
-  | "Landscaping"
-  | "Garage"
-  | "Laundry room"
-  | "Deck";
+export type PropertyComponentCategory =
+  | "roof"
+  | "exterior_paint"
+  | "windows"
+  | "kitchen"
+  | "bathrooms"
+  | "floors"
+  | "doors"
+  | "landscaping"
+  | "garage"
+  | "laundry_room"
+  | "deck";
+
+export type ComponentGradeType = "GOOD" | "FAIR" | "BAD";
+
+export type ComponentEvaluationGrade = ComponentGradeType | "UNKNOWN" | "N/A";
+
+export interface AIComponentEvaluation {
+  component: PropertyComponentCategory;
+  grade: ComponentEvaluationGrade;
+  confidence: number;
+  reason: string;
+  recommendedAction: string | null;
+  photoIds: string[];
+}
+
+export interface EvaluatedComponentResult extends AIComponentEvaluation {
+  gradePercentage: number;
+}
+
+export interface PropertyComponentGrade {
+  id: number;
+  componentKey: PropertyComponentCategory;
+  grade: ComponentGradeType;
+  gradePercentage: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateComponentGradeInput {
+  gradePercentage: number;
+}
 
 export interface PropertyPhoto {
   id: number;
   propertyId: string;
   url?: string;
-  category: PropertyPhotoCategory;
+  category: PropertyComponentCategory;
   createdAt: string;
   updatedAt: string;
 }
