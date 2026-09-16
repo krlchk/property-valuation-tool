@@ -190,3 +190,38 @@ export interface CreateUserPayload {
 }
 
 export type UpdateUserPayload = Partial<CreateUserPayload>;
+
+
+export type OfferStatus = "accepted" | "proccessed" | "done";
+
+export interface Offer {
+  id: string;
+  propertyId: string;
+  userId: string;
+  minPrice: number;
+  maxPrice: number;
+  status: OfferStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OfferStatusHistory {
+  id: number;
+  offerId: string;
+  status: OfferStatus;
+  createdAt: string;
+}
+
+export interface CreateOfferPayload {
+  propertyId: string;
+  userId: string;
+  minPrice: number;
+  maxPrice: number;
+  status?: OfferStatus;
+}
+
+export interface UpdateOfferPayload {
+  minPrice?: number;
+  maxPrice?: number;
+  status?: OfferStatus;
+}
