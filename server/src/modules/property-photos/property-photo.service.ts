@@ -1,6 +1,6 @@
 import type {
   PropertyPhoto,
-  PropertyPhotoCategory,
+  PropertyComponentCategory,
 } from "@pvt/shared";
 import { supabase } from "../../lib/supabase";
 import { deletePropertyPhotoObject } from "../storage/s3.service";
@@ -37,7 +37,7 @@ export const createPropertyPhoto = async (input: {
   propertyId: string;
   url: string;
   storagePath: string;
-  category: PropertyPhotoCategory;
+  category: PropertyComponentCategory;
 }): Promise<PropertyPhoto> => {
   const { data, error } = await supabase
     .from("property_photos")
@@ -56,7 +56,7 @@ export const createPropertyPhoto = async (input: {
 
 export const updatePropertyPhoto = async (
   id: number,
-  category: PropertyPhotoCategory,
+  category: PropertyComponentCategory,
 ): Promise<PropertyPhoto | null> => {
   const { data, error } = await supabase
     .from("property_photos")
@@ -90,11 +90,13 @@ export const deletePropertyPhoto = async (id: number): Promise<boolean> => {
   return true;
 };
 
-const mapPropertyPhoto = (data: PropertyPhotoRow): PropertyPhoto => ({
-  id: Number(data.id),
-  propertyId: String(data.property_id),
-  url: typeof data.url === "string" ? data.url : undefined,
-  category: data.category as PropertyPhotoCategory,
-  createdAt: String(data.created_at),
-  updatedAt: String(data.updated_at),
-});
+function mapPropertyPhoto(data: PropertyPhotoRow): PropertyPhoto {
+  return {
+    id: Number(data.id),
+    propertyId: String(data.property_id),
+    url: typeof data.url === "string" ? data.url : undefined,
+    category: data.category as PropertyComponentCategory,
+    createdAt: String(data.created_at),
+    updatedAt: String(data.updated_at),
+  }
+};

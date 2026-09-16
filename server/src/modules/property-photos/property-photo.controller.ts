@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { PropertyPhotoCategory } from "@pvt/shared";
+import type { PropertyComponentCategory } from "@pvt/shared";
 import { getIdFromParam } from "../../utils/query";
 import {
   createPropertyPhoto,
@@ -12,24 +12,11 @@ import {
   deletePropertyPhotoObject,
   uploadPropertyPhoto,
 } from "../storage/s3.service";
+import { PROPERTY_COMPONENT_CATEGORIES } from "../../utils/component-categories";
 
-export const PROPERTY_PHOTO_CATEGORIES = [
-  "Roof",
-  "Exterior paint",
-  "Windows",
-  "Kitchen",
-  "Bathrooms",
-  "Floors",
-  "Doors",
-  "Landscaping",
-  "Garage",
-  "Laundry room",
-  "Deck",
-] as const satisfies readonly PropertyPhotoCategory[];
-
-const isCategory = (value: unknown): value is PropertyPhotoCategory =>
+const isCategory = (value: unknown): value is PropertyComponentCategory =>
   typeof value === "string" &&
-  (PROPERTY_PHOTO_CATEGORIES as readonly string[]).includes(value);
+  (PROPERTY_COMPONENT_CATEGORIES as readonly string[]).includes(value);
 
 const parsePhotoId = (req: Request) => {
   const { id } = getIdFromParam(req, true);
@@ -74,6 +61,7 @@ export const createPropertyPhotoController = async (req: Request, res: Response)
     if (!propertyId || !isCategory(category)) {
       return res.status(400).json({ error: "propertyId and a valid category are required" });
     }
+
     if (!req.file) {
       return res.status(400).json({ error: "A photo file is required" });
     }
