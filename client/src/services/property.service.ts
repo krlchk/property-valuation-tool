@@ -1,5 +1,7 @@
 import type {
   CreatePropertyRequest,
+  EstimatePropertyRequest,
+  EstimateResponse,
   PropertyResponse,
   UpdatePropertyRequest,
 } from "@pvt/shared";
@@ -19,11 +21,11 @@ export const propertyService = {
     return request<PropertyResponse>(`/properties/${encodeURIComponent(id)}`);
   },
 
-  estimatePrice: (id: string): Promise<{ estimatedPrice: number }> => {
-    return request(`/properties/estimate`, {
+  estimatePrice: (input: EstimatePropertyRequest): Promise<{ estimatedPrice: number }> => {
+    return request<EstimateResponse>(`/properties/estimate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(id),
+      body: JSON.stringify(input),
     });
   },
 

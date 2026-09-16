@@ -55,6 +55,8 @@ export interface UpdatePropertyRequest {
   
   offerTermsId?: number | null;
 
+  userId?: string | null;
+
   // status?: PropertyStatus | string;
 }
 
@@ -78,12 +80,19 @@ export interface PropertyResponse {
   offerTermsId: number | null;
   status: string;
 
+  userId: string | null;
+
   createdAt: string;
   updatedAt: string;
 }
 
 export interface EstimatePropertyRequest {
-  prorpId: string;
+  propId: string;
+  conditionAdjustmentPct: number;
+}
+
+export interface EstimateResponse {
+  estimatedPrice: number;
 }
 
 // Offer Terms
@@ -166,3 +175,18 @@ export interface UpdateOfferTermsRequest {
   inspectionDays?: number;
   inspectionDescription?: string | null;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  mobileNumber: string;
+}
+
+export interface CreateUserPayload {
+  name: string;
+  email: string;
+  mobileNumber: string;
+}
+
+export type UpdateUserPayload = Partial<CreateUserPayload>;

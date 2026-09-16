@@ -1,5 +1,6 @@
 import { CreatePropertyRequest, UpdatePropertyRequest, PropertyResponse } from "@pvt/shared";
 import { supabase } from "../../lib/supabase";
+import { findUserById } from "../users/users.service";
 
 export const getPropertyById = async (
   id: string,
@@ -74,6 +75,16 @@ export const updateProperty = async (
     updatePayload.offer_terms_id = input.offerTermsId ?? null;
   }
 
+  if(input.userId !== undefined) {
+    if(input.userId !== null) {
+      const found = await findUserById(input.userId);
+
+      if (!found) throw new Error('User not found');
+    }
+
+    updatePayload.user_id = input.userId
+  }
+
   const { data, error } = await supabase
     .from("properties")
     .update(updatePayload)
@@ -127,6 +138,8 @@ function mapToPropertyResponse (data: Record<string, any>): PropertyResponse {
 
     offerTermsId: data.offer_terms_id ?? null,
     status: data.status,
+
+    userId: data.user_id,
 
     createdAt: data.created_at,
     updatedAt: data.updated_at,

@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { createProperty, deleteProperty, getPropertyById, updateProperty } from "./property.service";
 import { getIdFromParam } from "../../utils/query";
 import { getOfferTermsById } from "../offer-terms/offer-terms.service";
+import { EstimatePropertyRequest } from "@pvt/shared";
 
 export const getPropertyByIdController = async(req: Request, res: Response, next: NextFunction) => {
   const { id } = getIdFromParam(req);
@@ -66,7 +67,7 @@ export const estimatePropertyPriceController = async (
   res: Response,
 ) => {
   try {
-    const { propId } = req.body; 
+    const { propId, conditionAdjustmentPct } = req.body as EstimatePropertyRequest; 
 
     const property = await getPropertyById(propId);
 
@@ -90,11 +91,8 @@ export const estimatePropertyPriceController = async (
       })
     }
 
-    // Add CONDITION_ADJUSTMENT_PCT from analyzing using ai
-    const CONDITION_ADJUSTMENT_PCT = -7.75;
-
     const conditionAdjustmentAmount = Math.round(
-      property.startingValue * (CONDITION_ADJUSTMENT_PCT / 100),
+      property.startingValue * (Number(conditionAdjustmentPct) ?? 0 / 100),
     );
   
     const estimatedValue = property.startingValue + conditionAdjustmentAmount;
@@ -135,6 +133,7 @@ export const updatePropertyController = async (req: Request, res: Response) => {
       squareFeet,
       startingValue,
       offerTermsId,
+      userId,
     } = req.body;
 
     const property = await updateProperty(id, {
@@ -149,6 +148,7 @@ export const updatePropertyController = async (req: Request, res: Response) => {
       squareFeet,
       startingValue,
       offerTermsId,
+      userId,
     });
 
     if (!property) {
