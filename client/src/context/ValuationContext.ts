@@ -1,4 +1,9 @@
-import { createContext, useContext } from "react";
+import {
+  createContext,
+  useContext,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import type { ContactInfo } from "../types/contact";
 import type { UploadedPhoto } from "../types/photo";
 // import type { TimelineOption } from "../types/timeline";
@@ -9,6 +14,10 @@ export type ValuationContextType = {
   setProperty: (property: PropertyResponse) => void;
   selectedTerm: OfferTerm | null;
   setSelectedTerm: (term: OfferTerm | null) => void;
+  conditionAdjustmentPct: number | null;
+  setConditionAdjustmentPct: (value: number | null) => void;
+  estimatedPrice: number | null;
+  setEstimatedPrice: (value: number | null) => void;
   photos: UploadedPhoto[];
   setPhotos: (photos: UploadedPhoto[]) => void;
   hydratedPropertyId: string | null;
@@ -16,7 +25,7 @@ export type ValuationContextType = {
   // timeline: TimelineOption | null;
   // setTimeline: (timeline: TimelineOption) => void;
   contact: ContactInfo;
-  setContact: (contact: ContactInfo) => void;
+  setContact: Dispatch<SetStateAction<ContactInfo>>;
 
   fetchPropertyById: (id: string) => Promise<void>;
   fetchTermById: (id: number) => Promise<void>;

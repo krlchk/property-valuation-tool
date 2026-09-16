@@ -8,6 +8,7 @@ import { offerTermsRouter } from "./modules/offer-terms/offer-terms.routes";
 import { propertyPhotoRouter } from "./modules/property-photos/property-photo.routes";
 import { componentsGradeRouter } from "./modules/components-grade/components-grade.route";
 import { aiReviewRouter } from "./modules/ai-review/ai-review.routes";
+import { userRouter } from "./modules/users/users.router";
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use("/api/components-grade", componentsGradeRouter);
 app.use("/api/ai-reviews", aiReviewRouter);
 app.use("/api/offer-terms", offerTermsRouter);
 app.use("/api/property-photos", propertyPhotoRouter);
+app.use("/api/users", userRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

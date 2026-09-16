@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { Outlet, useParams } from "react-router-dom";
+import { Outlet, useLocation, useParams } from "react-router-dom";
 import { LoadingSpinner } from "../components/Loading";
 import { ErrorState } from "../components/Error";
 import { useValuation } from "../context/ValuationContext";
 import { offerTermsService } from "../services/offer-terms.service";
 import { propertyPhotosService } from "../services/property-photos.service";
 import { propertyService } from "../services/property.service";
+import { StepsWrapper } from "../components/StepsWrapper";
 
 export const PropertyFlowLayout = () => {
+  const location = useLocation();
   const { addressId } = useParams<{ addressId: string }>();
   const {
     hydratedPropertyId,
@@ -71,9 +73,25 @@ export const PropertyFlowLayout = () => {
 
   const isLoading = hydratedPropertyId !== addressId;
   const error = errorAddressId === addressId ? loadError : null;
+  const isPhotosPage = location.pathname.endsWith("/photos");
+  const loadingStep = location.pathname.endsWith("/timeline")
+    ? { stepHeaderCurrent: 3, stepHeaderLabel: "Step 3 of 4 · Timeline" }
+    : location.pathname.endsWith("/contact")
+      ? { stepHeaderCurrent: 4, stepHeaderLabel: "Step 4 of 4 · Contact" }
+      : location.pathname.includes("/offer")
+        ? { stepHeaderCurrent: 4, stepHeaderLabel: "Your offer" }
+        : { stepHeaderCurrent: 1, stepHeaderLabel: "Step 1 of 4 · Address" };
 
-  if (isLoading && !error) {
-    return <LoadingSpinner label="Loading property details..." />;
+  if (isLoading && !error && !isPhotosPage) {
+    return (
+      <StepsWrapper
+        stepHeaderCurrent={loadingStep.stepHeaderCurrent}
+        stepHeaderTotal={4}
+        stepHeaderLabel={loadingStep.stepHeaderLabel}
+      >
+        <LoadingSpinner label="Loading property details..." />
+      </StepsWrapper>
+    );
   }
 
   if (error) {

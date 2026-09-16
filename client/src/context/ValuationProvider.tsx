@@ -11,6 +11,8 @@ export const ValuationProvider = ({ children }: { children: ReactNode }) => {
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [hydratedPropertyId, setHydratedPropertyId] = useState<string | null>(null);
   const [selectedTerm, setSelectedTerm] = useState<OfferTerm | null>(null);
+  const [conditionAdjustmentPct, setConditionAdjustmentPct] = useState<number | null>(null);
+  const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
   const [contact, setContact] = useState<ContactInfo>(EMPTY_CONTACT);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +48,8 @@ export const ValuationProvider = ({ children }: { children: ReactNode }) => {
     setPhotos([]);
     setHydratedPropertyId(null);
     setSelectedTerm(null);
+    setConditionAdjustmentPct(null);
+    setEstimatedPrice(null);
     setContact(EMPTY_CONTACT);
   };
 
@@ -60,6 +64,10 @@ export const ValuationProvider = ({ children }: { children: ReactNode }) => {
         setHydratedPropertyId,
         selectedTerm,
         setSelectedTerm,
+        conditionAdjustmentPct,
+        setConditionAdjustmentPct,
+        estimatedPrice,
+        setEstimatedPrice,
         contact,
         setContact,
         fetchPropertyById,
