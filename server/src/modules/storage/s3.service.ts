@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { supabase } from "../../lib/supabase";
 
-const PROPERTY_PHOTOS_BUCKET =
-  process.env.SUPABASE_PROPERTY_PHOTOS_BUCKET ?? "property-photos";
+const PROPERTY_BUCKET =
+  process.env.SUPABASE_BUCKET ?? "property-photos";
 
 const safeFileName = (name: string) => {
   const extension = path.extname(name).toLowerCase().replace(/[^a-z0-9.]/g, "");
@@ -17,7 +17,7 @@ export const uploadPropertyPhoto = async (input: {
   originalName: string;
 }) => {
   const storagePath = `${input.propertyId}/${safeFileName(input.originalName)}`;
-  const bucket = supabase.storage.from(PROPERTY_PHOTOS_BUCKET);
+  const bucket = supabase.storage.from(PROPERTY_BUCKET);
 
   const { error } = await bucket.upload(storagePath, input.buffer, {
     contentType: input.contentType,
@@ -36,7 +36,7 @@ export const uploadPropertyPhoto = async (input: {
 
 export const deletePropertyPhotoObject = async (storagePath: string) => {
   const { error } = await supabase.storage
-    .from(PROPERTY_PHOTOS_BUCKET)
+    .from(PROPERTY_BUCKET)
     .remove([storagePath]);
 
   if (error) throw error;
