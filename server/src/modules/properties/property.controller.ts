@@ -91,14 +91,18 @@ export const estimatePropertyPriceController = async (
       })
     }
 
+    const parsedConditionAdjustmentPct = Number(conditionAdjustmentPct);
+    const safeConditionAdjustmentPct = Number.isFinite(parsedConditionAdjustmentPct)
+      ? parsedConditionAdjustmentPct
+      : 0;
     const conditionAdjustmentAmount = Math.round(
-      property.startingValue * (Number(conditionAdjustmentPct) ?? 0 / 100),
+      property.startingValue * (safeConditionAdjustmentPct / 100),
     );
   
     const estimatedValue = property.startingValue + conditionAdjustmentAmount;
 
     const totalEstimatedPrice = Math.round(
-      estimatedValue * (offerTerm.priceMultiplier - 1),
+      estimatedValue * offerTerm.priceMultiplier,
     );
 
     return res.json({ estimatedPrice: totalEstimatedPrice });
