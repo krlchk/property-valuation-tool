@@ -6,50 +6,45 @@ alter table public.property_photos
 alter table public.property_component_grades 
   alter column component_key type text using component_key::text;
 
-drop type public.property_component_category;
+drop type if exists public.property_component_category cascade;
 
 create type public.property_component_category as enum (
   'roof',
   'exterior_paint',
   'windows',
   'kitchen',
-  'bathroom',
-  'flooring',
+  'bathrooms',
+  'floors',
   'doors',
   'landscaping',
   'garage',
   'laundry_room',
-  'deck',
-  'interior',
-  'bedroom',
-  'living_room',
-  'floorplan',
-  'aerial',
-  'other'
+  'deck'
 );
+
+alter table public.property_photos 
+  alter column category set default 'other'::public.property_component_category;
+
 
 alter table public.property_photos 
   alter column category type public.property_component_category 
   using (
     case lower(trim(category))
-      when 'bathrooms' then 'bathroom'
-      when 'floors' then 'flooring'
       when 'exterior' then 'exterior_paint'
+      when 'flooring' then 'floors'
+      when 'bathroom' then 'bathrooms'
       when 'laundry' then 'laundry_room'
       else lower(trim(category))
     end
   )::public.property_component_category;
 
-alter table public.property_photos 
-  alter column category set default 'other'::public.property_component_category;
-
 alter table public.property_component_grades 
   alter column component_key type public.property_component_category 
   using (
     case lower(trim(component_key))
-      when 'bathrooms' then 'bathroom'
-      when 'floors' then 'flooring'
       when 'exterior' then 'exterior_paint'
+      when 'flooring' then 'floors'
+      when 'bathroom' then 'bathrooms'
       when 'laundry' then 'laundry_room'
       else lower(trim(component_key))
     end
