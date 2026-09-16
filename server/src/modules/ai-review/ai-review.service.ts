@@ -14,7 +14,7 @@ import {
 } from "../property-photos/property-photo.service";
 
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
-const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "chatgpt-mini-4o";
+const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
 const INSPECTOR_SYSTEM_PROMPT = `You are an expert residential real estate property condition inspector. Your job is to analyze photos of a house component and evaluate its visible physical condition.
 
