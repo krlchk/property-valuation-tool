@@ -23,12 +23,23 @@ const formatElapsed = (elapsedMs: number) => {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 };
 
+const formatComponentName = (component: string) =>
+  component
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
 export const AnalyzingPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
 
-  const { property, photos, setConditionAdjustmentPct, setEstimatedPrice } =
-    useValuation();
+  const {
+    property,
+    photos,
+    selectedTerm,
+    setConditionAdjustmentPct,
+    setEstimatedPrice,
+  } = useValuation();
 
   useRequireStep("offer");
 
@@ -64,6 +75,35 @@ export const AnalyzingPage = () => {
         });
         if (!isMounted) return;
 
+        await aiReviewService.storePropertyReview(property.id, {
+          estimatedPrice: estimate.estimatedPrice,
+          conditionAdjustmentPct: review.totalAdjustmentPct,
+          offerTermPct: selectedTerm
+            ? Math.round((selectedTerm.priceMultiplier - 1) * 100)
+            : 0,
+          finalEstimatedPrice: selectedTerm
+            ? estimate.estimatedPrice * selectedTerm.priceMultiplier
+            : estimate.estimatedPrice,
+          reviewResponse: review,
+        });
+
+        const unknownEvaluations = review.evaluations
+          .filter((evaluation) => evaluation.grade === "UNKNOWN")
+          .map((evaluation) => ({
+            component: formatComponentName(evaluation.component),
+            reason: evaluation.reason,
+          }));
+
+        if (unknownEvaluations.length > 0) {
+          const componentMessages = unknownEvaluations
+            .map(({ component, reason }) => `• ${component}: ${reason}`)
+            .join("\n");
+          setError(
+            `${componentMessages}\n\nPlease remove or replace them before continuing.`,
+          );
+          return;
+        }
+
         setEstimatedPrice(estimate.estimatedPrice);
         setCompletedSteps(STEPS.length);
         setElapsedMs(performance.now() - startedAt);
@@ -90,6 +130,7 @@ export const AnalyzingPage = () => {
     addressId,
     navigate,
     property?.id,
+    selectedTerm,
     setConditionAdjustmentPct,
     setEstimatedPrice,
   ]);
@@ -102,7 +143,11 @@ export const AnalyzingPage = () => {
         stepHeaderLabel="Pricing your property"
         stepHeaderHideBack
       >
-        <ErrorState message={error} />
+        <ErrorState
+          message={error}
+          actionLabel="Update photos"
+          onAction={() => navigate(`/addresses/${addressId}/photos`)}
+        />
       </StepsWrapper>
     );
   }
@@ -175,7 +220,7 @@ export const AnalyzingPage = () => {
           </p>
           <button
             type="button"
-            onClick={() => navigate(`/addresses/${addressId}/offer`)}
+            onClick={() => navigate(`/addresses/${addressId}/photos`)}
             className="shrink-0 cursor-pointer text-sm font-medium text-custom-blue"
           >
             Skip →

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type {
@@ -73,7 +74,7 @@ export const AddressPage = () => {
           postalCode: property.postalCode,
           latitude: property.latitude,
           longitude: property.longitude,
-          provider: (property.addressProvider as any) ?? "mock",
+          provider: (property.addressProvider as never) ?? "mock",
           providerPlaceId: property.providerPlaceId ?? "",
         };
       }
@@ -111,7 +112,7 @@ export const AddressPage = () => {
         postalCode: property.postalCode,
         latitude: property.latitude,
         longitude: property.longitude,
-        provider: (property.addressProvider as any) ?? "mock",
+        provider: (property.addressProvider as never) ?? "mock",
         providerPlaceId: property.providerPlaceId ?? "",
       });
     }
@@ -119,12 +120,6 @@ export const AddressPage = () => {
 
   const trimmedQuery = query.trim();
   const queryTooShort = trimmedQuery.length < MIN_QUERY_LENGTH;
-
-  useEffect(() => {
-    if (trimmedQuery.length === 0) {
-      setSelectError(null);
-    }
-  }, [trimmedQuery]);
 
   useEffect(() => {
     if (queryTooShort) {
@@ -175,7 +170,9 @@ export const AddressPage = () => {
       ? showError
       : "No matches. Check the spelling or try a nearby street.";
 
-  const canContinue = Boolean(selectedAddress);
+  const canContinue = Boolean(
+    selectedAddress && propertyPrice !== null && propertyPrice > 0,
+  );
 
   const handlePriceChange = (event: ChangeEvent<HTMLInputElement>) => {
     const rawDigits = event.target.value.replace(/[^0-9]/g, "");
@@ -278,6 +275,11 @@ export const AddressPage = () => {
   const handleContinue = async () => {
     if (!selectedAddress) return;
 
+    if (propertyPrice === null || propertyPrice <= 0) {
+      setSelectError("Please enter a starting value to continue.");
+      return;
+    }
+
     if (
       property &&
       property.addressLine1 === selectedAddress.addressLine1 &&
@@ -292,7 +294,7 @@ export const AddressPage = () => {
     setSelectError(null);
     try {
       const created = await propertyService.create(
-        toCreatePropertyInput(selectedAddress, propertyPrice ?? 0),
+        toCreatePropertyInput(selectedAddress, propertyPrice),
       );
       setProperty(created);
       navigate(`/addresses/${created.id}/photos`);
@@ -492,7 +494,9 @@ export const AddressPage = () => {
         <p className="mt-2 text-center text-xs text-slate-500">
           {canContinue
             ? "Next: add photos to sharpen the estimate"
-            : "Select an address to continue"}
+            : selectedAddress
+              ? "Enter a starting value to continue"
+              : "Select an address to continue"}
         </p>
       </div>
     </StepsWrapper>

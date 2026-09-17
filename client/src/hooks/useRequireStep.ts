@@ -20,7 +20,7 @@ export const useRequireStep = (requiredStep: RequiredStep) => {
 
   const prerequisites = [
     { satisfied: Boolean(property), redirectTo: "/" },
-    { satisfied: photos.length > 0, redirectTo: `${base}/photos` },
+    { satisfied: photos.length >= 5, redirectTo: `${base}/photos` },
     {
       satisfied: Boolean(selectedTerm || property?.offerTermsId),
       redirectTo: `${base}/timeline`,

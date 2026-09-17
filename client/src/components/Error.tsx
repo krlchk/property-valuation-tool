@@ -14,7 +14,7 @@ export const ErrorState = ({
   return (
     <div className="mt-8 rounded-2xl bg-red-50 p-6 text-center">
       {title && <p className="text-sm font-bold text-red-900">{title}</p>}
-      <p className="text-sm font-semibold text-red-800">{message}</p>
+      <p className="whitespace-pre-line text-left text-sm font-semibold text-red-800">{message}</p>
       {onAction && actionLabel && (
         <button
           type="button"

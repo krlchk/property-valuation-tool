@@ -9,7 +9,7 @@ import { useValuation } from "../context/ValuationContext";
 import { aiReviewService } from "../services/ai-review.service";
 import { offersService } from "../services/offers.service";
 import { propertyService } from "../services/property.service";
-import type { OfferTerm } from "@pvt/shared";
+import type { OfferTerm, PropertyAIReview } from "@pvt/shared";
 import { STARTING_VALUE, formatCurrency } from "../utils/estimate";
 import { getOfferPriceRange } from "../utils/offerTerms";
 
@@ -64,6 +64,7 @@ export const OfferPage = () => {
   const [isAccepting, setIsAccepting] = useState(false);
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const assessmentKeyRef = useRef<string | null>(null);
+  const storedReviewKeyRef = useRef<string | null>(null);
 
   useRequireStep("offer");
 
@@ -83,9 +84,11 @@ export const OfferPage = () => {
 
       try {
         let adjustmentPct = conditionAdjustmentPct;
+        let review: PropertyAIReview | null = null;
+        let finalEstimatedPrice = estimatedPrice;
 
         if (adjustmentPct === null) {
-          const review = await aiReviewService.reviewPropertyById(property.id);
+          review = await aiReviewService.reviewPropertyById(property.id);
           if (!isMounted) return;
 
           adjustmentPct = review.totalAdjustmentPct;
@@ -99,7 +102,29 @@ export const OfferPage = () => {
           });
           if (!isMounted) return;
 
-          setEstimatedPrice(estimate.estimatedPrice);
+          finalEstimatedPrice = estimate.estimatedPrice;
+          setEstimatedPrice(finalEstimatedPrice);
+        }
+
+        if (
+          review &&
+          adjustmentPct !== null &&
+          finalEstimatedPrice !== null &&
+          storedReviewKeyRef.current !== assessmentKey
+        ) {
+          const conditionAmount = Math.round(
+            property.startingValue * (adjustmentPct / 100),
+          );
+          const estimatedValue = property.startingValue + conditionAmount;
+
+          await aiReviewService.storePropertyReview(property.id, {
+            estimatedPrice: estimatedValue,
+            conditionAdjustmentPct: adjustmentPct,
+            offerTermPct: Math.round((selectedTerm.priceMultiplier - 1) * 100),
+            finalEstimatedPrice,
+            reviewResponse: review,
+          });
+          storedReviewKeyRef.current = assessmentKey;
         }
       } catch (requestError: unknown) {
         if (!isMounted) return;
@@ -127,6 +152,7 @@ export const OfferPage = () => {
     selectedTerm,
     setConditionAdjustmentPct,
     setEstimatedPrice,
+    property?.startingValue,
   ]);
 
   if (error || assessmentError) {

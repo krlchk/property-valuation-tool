@@ -13,6 +13,7 @@ import { propertyPhotosService } from "../services/property-photos.service";
 import type { UploadedPhoto } from "../types/photo";
 
 const TARGET_PHOTOS = 10;
+const MINIMUM_PHOTOS = Math.ceil(TARGET_PHOTOS / 2);
 
 // MVP: fixed set of 11 categories — no custom categories for now (see
 // `handleAddCategory` / `AddPhotosDialog` below).
@@ -104,7 +105,7 @@ export const PropertyPhotosPage = () => {
   const progress = Math.min(photos.length / TARGET_PHOTOS, 1);
   const coveragePct = Math.round(progress * 100);
   const remaining = Math.max(TARGET_PHOTOS - photos.length, 0);
-  const canContinue = photos.length > 0;
+  const canContinue = photos.length >= MINIMUM_PHOTOS;
   const atLimit = photos.length >= TARGET_PHOTOS;
 
   const locationLabel = property
@@ -408,7 +409,9 @@ export const PropertyPhotosPage = () => {
 
         <button
           type="button"
-          onClick={() => navigate(`/addresses/${addressId}/timeline`)}
+          onClick={() => {
+            if (canContinue) navigate(`/addresses/${addressId}/timeline`);
+          }}
           disabled={!canContinue}
           className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-[#E8F4FD] disabled:opacity-50"
         >
@@ -417,7 +420,7 @@ export const PropertyPhotosPage = () => {
         <p className="mt-2 text-center text-xs text-slate-500">
           {canContinue
             ? "Roof and bathrooms move it most"
-            : "Add at least one photo to continue"}
+            : `Add at least ${MINIMUM_PHOTOS} photos to continue`}
         </p>
       </div>
 
