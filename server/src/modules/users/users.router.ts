@@ -3,11 +3,14 @@ import {
     getUserByIdController, 
     upsertUserController,
     updateUserController,
-    deleteUserController
+    deleteUserController,
+    getUserController
 } from "./users.controller";
 
 export const userRouter = Router();
 
+
+userRouter.get("/", getUserController);
 userRouter.get("/:id", getUserByIdController);
 userRouter.post("/", upsertUserController);
 userRouter.patch("/:id", updateUserController);

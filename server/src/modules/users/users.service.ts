@@ -1,5 +1,29 @@
-import { CreateUserPayload, UpdateUserPayload, User } from "@pvt/shared";
+import { CreateUserPayload, UpdateUserPayload, User, FetchAllResponse } from "@pvt/shared";
 import { supabase } from "../../lib/supabase";
+
+
+export const getAllUsers = async (
+  page: number,
+  limit: number,
+): Promise<FetchAllResponse<User>> => {
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  const { data, error, count } = await supabase
+    .from("users")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    data: (data || []).map(mapUser),
+    total: count ?? 0,
+  };
+};
 
 export const findUserById = async (id: string): Promise<User | null> => {
   const { data, error } = await supabase

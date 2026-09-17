@@ -1,8 +1,36 @@
 import type { Request, Response, NextFunction } from "express";
-import { createProperty, deleteProperty, getPropertyById, updateProperty } from "./property.service";
-import { getIdFromParam } from "../../utils/query";
+import { createProperty, deleteProperty, getAllProperties, getPropertyById, updateProperty } from "./property.service";
+import { DEFAULT_LIMIT, DEFAULT_PAGE, getIdFromParam, MAX_LIMIT, parsePaginationParam } from "../../utils/query";
 import { getOfferTermsById } from "../offer-terms/offer-terms.service";
 import { EstimatePropertyRequest } from "@pvt/shared";
+
+export const getAllPropertiesController = async (req: Request, res: Response) => {
+  try {
+    const page = parsePaginationParam(req.query.page, DEFAULT_PAGE);
+    const limit = parsePaginationParam(req.query.limit, DEFAULT_LIMIT);
+
+    if (page === null || limit === null || limit > MAX_LIMIT) {
+      return res.status(400).json({
+        error: `page and limit must be positive integers; limit cannot exceed ${MAX_LIMIT}`,
+      });
+    }
+
+    const result = await getAllProperties(page, limit);
+
+    return res.status(200).json({
+      items: result.data,
+      pagination: {
+        page,
+        limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / limit),
+      },
+    });
+  } catch (error: any) {
+    console.error("Failed to fetch properties:", error);
+    return res.status(500).json({ error: error?.message || "Failed to fetch properties" });
+  }
+};
 
 export const getPropertyByIdController = async(req: Request, res: Response, next: NextFunction) => {
   const { id } = getIdFromParam(req);

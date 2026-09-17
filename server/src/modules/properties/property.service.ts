@@ -1,6 +1,29 @@
-import { CreatePropertyRequest, UpdatePropertyRequest, PropertyResponse } from "@pvt/shared";
+import { CreatePropertyRequest, UpdatePropertyRequest, PropertyResponse, FetchAllResponse } from "@pvt/shared";
 import { supabase } from "../../lib/supabase";
 import { findUserById } from "../users/users.service";
+
+export const getAllProperties = async (
+  page: number,
+  limit: number,
+): Promise<FetchAllResponse<PropertyResponse>> => {
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  const { data, error, count } = await supabase
+    .from("properties")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    data: (data || []).map(mapToPropertyResponse),
+    total: count ?? 0,
+  };
+};
 
 export const getPropertyById = async (
   id: string,
