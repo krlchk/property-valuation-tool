@@ -1,7 +1,6 @@
 import type { RefineThemedLayoutHeaderProps } from "@refinedev/antd";
 import { useGetIdentity } from "@refinedev/core";
 import {
-  Avatar,
   Layout as AntdLayout,
   Space,
   Switch,
@@ -53,7 +52,6 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
         />
         <Space style={{ marginLeft: "8px" }} size="middle">
           {user?.name && <Text strong>{user.name}</Text>}
-          {user?.avatar && <Avatar src={user?.avatar} alt={user?.name} />}
         </Space>
       </Space>
     </AntdLayout.Header>

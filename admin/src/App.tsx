@@ -3,9 +3,7 @@ import {
   Authenticated,
 } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-
 import {
-  // AuthPage,
   ErrorComponent,
   useNotificationProvider,
   ThemedLayout,
@@ -32,14 +30,15 @@ import { PropertiesList, PropertyShow } from "./pages/properties";
 import { OfferTermsEdit, OfferTermsList } from "./pages/offer-terms";
 import { UserEdit, UsersList, UserShow } from "./pages/users";
 import { OfferEdit, OffersList, OfferShow } from "./pages/offers";
+import { ComponentsGradeEdit, ComponentsGradeList } from "./pages/components-grade";
+import { BuildOutlined, FileTextOutlined, HomeOutlined, PercentageOutlined, UserOutlined } from "@ant-design/icons";
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/admin">
       <RefineKbarProvider>
         <ColorModeContextProvider>
           <AntdApp>
-            {/* <DevtoolsProvider> */}
               <Refine
                 dataProvider={dataProvider}
                 notificationProvider={useNotificationProvider}
@@ -53,38 +52,54 @@ function App() {
                     edit: "/properties/:id/edit",
                     meta: {
                       canDelete: true,
+                      icon: <HomeOutlined />
                     }
-                  },
-                  // {
-                  //   name: "property-photos",
-                  // },
-                  {
-                    name: "offer-terms",
-                    list: "/offer-terms",
-                    edit: "/offer-terms/:id/edit",
-                    meta: {
-                      canDelete: true,
-                    },
                   },
                   {
                     name: "users",
                     list: "/users",
                     show: "/users/:id",
                     edit: "/users/:id/edit",
-                    meta: { canDelete: true },
+                    meta: { 
+                      canDelete: true,
+                      icon: <UserOutlined />
+                    },
                   },
                   {
                     name: "offers",
                     list: "/offers",
                     show: "/offers/:id",
                     edit: "/offers/:id/edit",
-                    meta: { canDelete: true },
+                    meta: { 
+                      canDelete: true,
+                      icon: <PercentageOutlined />
+                    },
+                  },
+                  {
+                    name: "offer-terms",
+                    list: "/offer-terms",
+                    edit: "/offer-terms/:id/edit",
+                    meta: {
+                      canDelete: true,
+                      icon: <FileTextOutlined />
+                    },
+                  },
+                  {
+                    name: "components-grade",
+                    list: "/components-grade",
+                    edit: "/components-grade/:componentKey/:grade/edit",
+                    meta: {
+                      canDelete: true,
+                      icon: <BuildOutlined />
+                    },
                   },
                 ]}
                 options={{
                   syncWithLocation: true,
                   warnWhenUnsavedChanges: true,
-                  // projectId: "WKSeL9-EnNkJe-HLRS4E",
+                  title:{
+                    text:"Instantcashly Admin"
+                  }
                 }}
               >
                 <Routes>
@@ -125,6 +140,10 @@ function App() {
                       <Route path=":id" element={<OfferShow />} />
                       <Route path=":id/edit" element={<OfferEdit />} />
                     </Route>
+                    <Route path="/components-grade">
+                      <Route index element={<ComponentsGradeList />} />
+                      <Route path=":componentKey/:grade/edit" element={<ComponentsGradeEdit />} />
+                    </Route>
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
                   <Route
@@ -150,8 +169,6 @@ function App() {
                 <UnsavedChangesNotifier />
                 <DocumentTitleHandler />
               </Refine>
-              {/* <DevtoolsPanel /> */}
-            {/* </DevtoolsProvider> */}
           </AntdApp>
         </ColorModeContextProvider>
       </RefineKbarProvider>

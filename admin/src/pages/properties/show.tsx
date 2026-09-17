@@ -2,6 +2,7 @@ import { DateField, NumberField, Show, TextField } from "@refinedev/antd";
 import { useCustom, useNavigation, useOne, useShow } from "@refinedev/core";
 import {
   Card,
+  Button,
   Col,
   Image,
   List,
@@ -11,6 +12,8 @@ import {
   Tabs,
   Tag,
   Typography,
+  Alert,
+  Tooltip,
 } from "antd";
 import {
   FileTextOutlined,
@@ -18,8 +21,10 @@ import {
   PictureOutlined,
   PercentageOutlined,
   UserOutlined,
+  DownloadOutlined,
+  RobotOutlined,
 } from "@ant-design/icons";
-import type { Offer, OfferTerm, PropertyPhoto, PropertyResponse, User } from "@pvt/shared";
+import type { Offer, OfferTerm, PropertyPhoto, PropertyResponse, PropertyReview, User } from "@pvt/shared";
 import { API_URL } from "../../providers/constants";
 
 const { Text, Link } = Typography;
@@ -77,9 +82,116 @@ export const PropertyShow = () => {
     },
   });
 
+
+  
+  const {
+    result: { data: aiReviews },
+    query: { isLoading: aiReviewsIsLoading, isError: aiReviewsIsError },
+  } = useCustom<PropertyReview[]>({
+    url: `${API_URL}/ai-reviews/property/${record?.id}`,
+    method: "get",
+    queryOptions: { enabled: !!record?.id },
+  });
+
+  const downloadSingleReviewResponse = (review: PropertyReview) => {
+    if (!review.reviewResponse) return;
+
+    const jsonString = JSON.stringify(review.reviewResponse, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `property-${record?.id}-review-${review.id}-response.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const aiReviewsTabContent = (
+    <Card title="Saved AI review responses">
+      {aiReviewsIsError ? (
+        <Alert type="error" message="Unable to load saved AI reviews." />
+      ) : (
+        <Table<PropertyReview>
+          loading={aiReviewsIsLoading}
+          dataSource={aiReviews || []}
+          rowKey="id"
+          pagination={{ pageSize: 5 }}
+          expandable={{
+            expandedRowRender: (record) => (
+              <div style={{ background: "#f5f5f5", padding: 16, borderRadius: 6 }}>
+                <Text type="secondary" strong style={{ display: "block", marginBottom: 8 }}>
+                  reviewResponse JSON:
+                </Text>
+                <pre style={{ maxHeight: 300, overflow: "auto", margin: 0, whiteSpace: "pre-wrap" }}>
+                  {JSON.stringify(record.reviewResponse, null, 2)}
+                </pre>
+              </div>
+            ),
+            rowExpandable: (record) => !!record.reviewResponse,
+          }}
+        >
+          <Table.Column dataIndex="id" title="ID" width={80} />
+
+          <Table.Column
+            dataIndex="estimatedPrice"
+            title="Estimated Price"
+            render={(val: number) => (
+              <NumberField value={val} options={{ style: "currency", currency: "USD" }} />
+            )}
+          />
+
+          <Table.Column
+            dataIndex="conditionAdjustmentPct"
+            title="Condition Adj."
+            render={(val: number) => <Tag color={val < 0 ? "volcano" : "green"}>{val}%</Tag>}
+          />
+
+          <Table.Column
+            dataIndex="offerTermPct"
+            title="Offer Term Adj."
+            render={(val: number) => <Tag color={val < 0 ? "volcano" : "blue"}>{val}%</Tag>}
+          />
+
+          <Table.Column
+            dataIndex="finalEstimatedPrice"
+            title="Final Price"
+            render={(val: number) => (
+              <Text strong>
+                <NumberField value={val} options={{ style: "currency", currency: "USD" }} />
+              </Text>
+            )}
+          />
+
+          <Table.Column
+            dataIndex="createdAt"
+            title="Created At"
+            render={(val: string) => <DateField value={val} format="LLL" />}
+          />
+
+          <Table.Column<PropertyReview>
+            title="Action"
+            key="action"
+            width={120}
+            render={(_, record) => (
+              <Tooltip title="Download this response JSON">
+                <Button
+                  type="text"
+                  icon={<DownloadOutlined />}
+                  onClick={() => downloadSingleReviewResponse(record)}
+                  disabled={!record.reviewResponse}
+                >
+                  JSON
+                </Button>
+              </Tooltip>
+            )}
+          />
+        </Table>
+      )}
+    </Card>
+  );
+
   const detailsTabContent = (
     <Space direction="vertical" style={{ width: "100%" }} size="large">
-      {/* Overview Grid */}
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
           <Card title={<Space><HomeOutlined /> Property & Valuation</Space>}>
@@ -104,11 +216,11 @@ export const PropertyShow = () => {
               </Col>
               <Col span={12}>
                 <Text type="secondary">Condition Pct %</Text>
-                <div><TextField value={record?.bedrooms ?? "N/A"} /></div>
+                <div><TextField value={"N/A"} /></div>
               </Col>
               <Col span={12}>
                 <Text type="secondary">Estimated Price</Text>
-                <div><TextField value={record?.bathrooms ?? "N/A"} /></div>
+                <div><TextField value={"N/A"} /></div>
               </Col>
             </Row>
           </Card>
@@ -306,6 +418,16 @@ export const PropertyShow = () => {
             children: detailsTabContent,
           },
           {
+            key: "gallery",
+            label: (
+              <Space>
+                <PictureOutlined />
+                Photo Gallery ({photos?.length ?? 0})
+              </Space>
+            ),
+            children: galleryTabContent,
+          },
+          {
             key: "offers",
             label: (
               <Space>
@@ -316,14 +438,9 @@ export const PropertyShow = () => {
             children: offersTabContent,
           },
           {
-            key: "gallery",
-            label: (
-              <Space>
-                <PictureOutlined />
-                Photo Gallery ({photos?.length ?? 0})
-              </Space>
-            ),
-            children: galleryTabContent,
+            key: "ai-reviews",
+            label: <Space><RobotOutlined /> AI Reviews ({aiReviews?.length ?? 0})</Space>,
+            children: aiReviewsTabContent,
           },
         ]}
       />
