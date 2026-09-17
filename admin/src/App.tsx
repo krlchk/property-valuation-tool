@@ -5,7 +5,7 @@ import {
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
 import {
-  AuthPage,
+  // AuthPage,
   ErrorComponent,
   useNotificationProvider,
   ThemedLayout,
@@ -29,6 +29,9 @@ import { Register } from "./pages/register";
 import { ForgotPassword } from "./pages/forgotPassword";
 import { authProvider } from "./providers/auth";
 import { PropertiesList, PropertyShow } from "./pages/properties";
+import { OfferTermsEdit, OfferTermsList } from "./pages/offer-terms";
+import { UserEdit, UsersList, UserShow } from "./pages/users";
+import { OfferEdit, OffersList, OfferShow } from "./pages/offers";
 
 function App() {
   return (
@@ -51,11 +54,36 @@ function App() {
                     meta: {
                       canDelete: true,
                     }
-                  }
+                  },
+                  // {
+                  //   name: "property-photos",
+                  // },
+                  {
+                    name: "offer-terms",
+                    list: "/offer-terms",
+                    edit: "/offer-terms/:id/edit",
+                    meta: {
+                      canDelete: true,
+                    },
+                  },
+                  {
+                    name: "users",
+                    list: "/users",
+                    show: "/users/:id",
+                    edit: "/users/:id/edit",
+                    meta: { canDelete: true },
+                  },
+                  {
+                    name: "offers",
+                    list: "/offers",
+                    show: "/offers/:id",
+                    edit: "/offers/:id/edit",
+                    meta: { canDelete: true },
+                  },
                 ]}
                 options={{
                   syncWithLocation: true,
-                  // warnWhenUnsavedChanges: true,
+                  warnWhenUnsavedChanges: true,
                   // projectId: "WKSeL9-EnNkJe-HLRS4E",
                 }}
               >
@@ -81,14 +109,22 @@ function App() {
                     />
                     <Route path="/properties">
                       <Route index element={<PropertiesList />} />
-                      <Route path="properties/:id" element={<PropertyShow />} />
+                      <Route path=":id" element={<PropertyShow />} />
                     </Route>
-                    {/* <Route path="/categories">
-                      <Route index element={<CategoryList />} />
-                      <Route path="create" element={<CategoryCreate />} />
-                      <Route path="edit/:id" element={<CategoryEdit />} />
-                      <Route path="show/:id" element={<CategoryShow />} />
-                    </Route> */}
+                    <Route path="/offer-terms">
+                      <Route index element={<OfferTermsList />} />
+                      <Route path=":id/edit" element={<OfferTermsEdit />} />
+                    </Route>
+                    <Route path="/users">
+                      <Route index element={<UsersList />} />
+                      <Route path=":id" element={<UserShow />} />
+                      <Route path=":id/edit" element={<UserEdit />} />
+                    </Route>
+                    <Route path="/offers">
+                      <Route index element={<OffersList />} />
+                      <Route path=":id" element={<OfferShow />} />
+                      <Route path=":id/edit" element={<OfferEdit />} />
+                    </Route>
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
                   <Route

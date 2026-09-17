@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   DateField,
   DeleteButton,
   EditButton,
   List,
-  MarkdownField,
   ShowButton,
   useTable,
 } from "@refinedev/antd";
@@ -40,14 +40,12 @@ export const PropertiesList = () => {
     result: { data: users },
     query: { isLoading: userIsLoading },
   } = useMany<User>({
-    resource: "offer-terms",
+    resource: "users",
     ids: userIds,
     queryOptions: {
       enabled: !!result?.data,
     },
   });
-
-
 
   return (
     <List>
@@ -142,6 +140,8 @@ export const PropertiesList = () => {
           render={(value: string | null) => {
             if(!value) return "N/A";
             if(userIsLoading) return (<>Loading...</>);
+
+            console.log(users);
 
             const user = users?.find((item) => item.id === value);
 

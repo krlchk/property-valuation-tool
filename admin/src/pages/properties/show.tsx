@@ -4,10 +4,11 @@ import {
   Show,
   TextField,
 } from "@refinedev/antd";
-import { useMany, useOne, useShow, useNavigation } from "@refinedev/core";
+import { useOne, useShow, useNavigation, useCustom } from "@refinedev/core";
 import { Card, Image, List, Space, Tabs, Tag, Typography } from "antd";
 import { OfferTerm, PropertyPhoto, PropertyResponse, User } from "@pvt/shared";
 import { UserOutlined, FileTextOutlined } from "@ant-design/icons";
+import { API_URL } from "../../providers/constants";
 
 const { Title, Link } = Typography;
 
@@ -41,13 +42,12 @@ export const PropertyShow = () => {
     },
   });
 
-  // 4. Fetch associated Property Photos
   const {
     result: { data: photos },
     query: { isLoading: photosIsLoading },
-  } = useMany<PropertyPhoto>({
-    resource: "property-photos",
-    ids: record?.id ? [record.id] : [], // Adjust resource/filters to match your backend query structure
+  } = useCustom<PropertyPhoto[]>({
+    url: `${API_URL}/property-photos/property/${record?.id}`,
+    method: "get",
     queryOptions: {
       enabled: !!record?.id,
     },
@@ -55,85 +55,124 @@ export const PropertyShow = () => {
 
   const detailsTabContent = (
     <Space direction="vertical" style={{ width: "100%" }} size="middle">
-      <Title level={5}>ID</Title>
-      <TextField value={record?.id} />
-
-      <Title level={5}>Address Line 1</Title>
-      <TextField value={record?.addressLine1} />
-
-      <Title level={5}>City</Title>
-      <TextField value={record?.city} />
-
-      <Title level={5}>State</Title>
-      <TextField value={record?.state} />
-
-      <Title level={5}>Postal Code</Title>
-      <TextField value={record?.postalCode} />
-
-      <Title level={5}>Coordinates</Title>
-      <TextField
-        value={
-          record?.latitude && record?.longitude
-            ? `${record.latitude}, ${record.longitude}`
-            : "N/A"
-        }
-      />
-
-      <Title level={5}>Address Provider</Title>
-      <TextField value={record?.addressProvider ?? "N/A"} />
-
-      <Title level={5}>Provider Place ID</Title>
-      <TextField value={record?.providerPlaceId ?? "N/A"} />
-
-      <Title level={5}>Square Feet</Title>
-      <NumberField
-        value={record?.squareFeet ?? 0}
-        options={{ style: "decimal" }}
-        // suffix=" sq ft"
-      />
-
-      <Title level={5}>Starting Value</Title>
-      <NumberField
-        value={record?.startingValue ?? 0}
-        options={{ style: "currency", currency: "USD" }}
-      />
-
-      <Title level={5}>User</Title>
-      {userIsLoading ? (
-        <>Loading...</>
-      ) : user ? (
-        <Link onClick={() => show("users", user.id)}>
-            <Space>
-                <UserOutlined />
-                {user.email}
-            </Space>
-        </Link>
-      ) : (
-        "N/A"
-      )}
-
-      <Title level={5}>Offer Term</Title>
-      {termIsLoading ? (
-        <>Loading...</>
-      ) : term ? (
-        <Link onClick={() => show("offer-terms", String(term.id))}>
-            <Space>
-                <FileTextOutlined />
-                {term.key}
-            </Space>
-        </Link>
-      ) : (
-        "N/A"
-      )}
-
-      <Title level={5}>Created At</Title>
-      <DateField value={record?.createdAt} />
-
-      <Title level={5}>Updated At</Title>
-      <DateField value={record?.updatedAt} />
+      <Card title="Address Information">
+        <Space direction="vertical" style={{ width: "100%" }} size="middle">
+          <div>
+            <Title level={5}>ID</Title>
+            <TextField value={record?.id} />
+          </div>
+    
+          <div>
+            <Title level={5}>Address Line 1</Title>
+            <TextField value={record?.addressLine1} />
+          </div>
+    
+          <div>
+            <Title level={5}>City</Title>
+            <TextField value={record?.city} />
+          </div>
+    
+          <div>
+            <Title level={5}>State</Title>
+            <TextField value={record?.state} />
+          </div>
+    
+          <div>
+            <Title level={5}>Postal Code</Title>
+            <TextField value={record?.postalCode} />
+          </div>
+    
+          <div>
+            <Title level={5}>Coordinates</Title>
+            <TextField
+              value={
+                record?.latitude != null && record?.longitude != null
+                  ? `${record.latitude}, ${record.longitude}`
+                  : "N/A"
+              }
+            />
+          </div>
+            
+          <div>
+            <Title level={5}>Address Provider</Title>
+            <TextField value={record?.addressProvider ?? "N/A"} />
+          </div>
+            
+          <div>
+            <Title level={5}>Provider Place ID</Title>
+            <TextField value={record?.providerPlaceId ?? "N/A"} />
+          </div>
+        </Space>
+      </Card>
+            
+      <Card title="Property & Offer">
+        <Space direction="vertical" style={{ width: "100%" }} size="middle">
+          <div>
+            <Title level={5}>Square Feet</Title>
+            <NumberField
+              value={record?.squareFeet ?? 0}
+              options={{ style: "decimal" }}
+            />
+          </div>
+            
+          <div>
+            <Title level={5}>Starting Value</Title>
+            <NumberField
+              value={record?.startingValue ?? 0}
+              options={{ style: "currency", currency: "USD" }}
+            />
+          </div>
+            
+          <div>
+            <Title level={5}>User</Title>
+            {userIsLoading ? (
+              <>Loading...</>
+            ) : user ? (
+              <Link onClick={() => show("users", user.id)}>
+                <Space>
+                  <UserOutlined />
+                  {user.email}
+                </Space>
+              </Link>
+            ) : (
+              "N/A"
+            )}
+          </div>
+          
+          <div>
+            <Title level={5}>Offer Term</Title>
+            {termIsLoading ? (
+              <>Loading...</>
+            ) : term ? (
+              <Link onClick={() => show("offer-terms", String(term.id))}>
+                <Space>
+                  <FileTextOutlined />
+                  {term.key}
+                </Space>
+              </Link>
+            ) : (
+              "N/A"
+            )}
+          </div>
+        </Space>
+      </Card>
+          
+      <Card title="Metadata">
+        <Space direction="vertical" style={{ width: "100%" }} size="middle">
+          <div>
+            <Title level={5}>Created At</Title>
+            <DateField value={record?.createdAt} />
+          </div>
+          
+          <div>
+            <Title level={5}>Updated At</Title>
+            <DateField value={record?.updatedAt} />
+          </div>
+        </Space>
+      </Card>
     </Space>
   );
-
+  
   const galleryTabContent = (
     <Image.PreviewGroup>
       <List
