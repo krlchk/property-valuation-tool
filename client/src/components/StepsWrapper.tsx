@@ -35,7 +35,7 @@ export const StepsWrapper = ({
   return (
     <div className="flex min-h-dvh flex-col p-5">
       <header className="flex items-center justify-between border-b border-gray-200 py-5">
-        <p className="font-semibold text-gray-400 text-[15px]">Your site</p>
+        <p className="text-[15px] font-semibold text-gray-400">Your site</p>
         <button
           type="button"
           onClick={() => setMenuOpen(true)}

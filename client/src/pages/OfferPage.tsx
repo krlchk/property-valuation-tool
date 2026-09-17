@@ -10,13 +10,8 @@ import { aiReviewService } from "../services/ai-review.service";
 import { offersService } from "../services/offers.service";
 import { propertyService } from "../services/property.service";
 import type { OfferTerm } from "@pvt/shared";
-import {
-  STARTING_VALUE,
-  formatCurrency,
-} from "../utils/estimate";
-import {
-  getOfferPriceRange,
-} from "../utils/offerTerms";
+import { STARTING_VALUE, formatCurrency } from "../utils/estimate";
+import { getOfferPriceRange } from "../utils/offerTerms";
 
 const OFFER_VALIDITY_DAYS = 14;
 
@@ -47,7 +42,8 @@ const getOfferContent = (term: OfferTerm) => {
 
   return {
     eyebrow: "Full-value offer",
-    subtitle: "Priced at full value on a normal timeline. More photos tighten the range.",
+    subtitle:
+      "Priced at full value on a normal timeline. More photos tighten the range.",
     note: `${term.inspectionDescription ?? `${term.inspectionDays}-day due diligence`}, a normal close, and the top number we can write.`,
   };
 };
@@ -55,13 +51,8 @@ const getOfferContent = (term: OfferTerm) => {
 export const OfferPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const {
-    property,
-    selectedTerm,
-    timelineAdjustmentPct,
-    isLoading,
-    error,
-  } = useOfferData(addressId);
+  const { property, selectedTerm, timelineAdjustmentPct, isLoading, error } =
+    useOfferData(addressId);
   const {
     conditionAdjustmentPct,
     setConditionAdjustmentPct,
@@ -140,9 +131,15 @@ export const OfferPage = () => {
 
   if (error || assessmentError) {
     return (
-      <StepsWrapper stepHeaderCurrent={4} stepHeaderTotal={4} stepHeaderLabel="Your offer">
+      <StepsWrapper
+        stepHeaderCurrent={4}
+        stepHeaderTotal={4}
+        stepHeaderLabel="Your offer"
+      >
         <ErrorState
-          message={error || assessmentError || "Unable to calculate your offer."}
+          message={
+            error || assessmentError || "Unable to calculate your offer."
+          }
           actionLabel="Start Over"
           onAction={() => navigate("/")}
         />
@@ -152,17 +149,32 @@ export const OfferPage = () => {
 
   if (isLoading || isAssessing) {
     return (
-      <StepsWrapper stepHeaderCurrent={4} stepHeaderTotal={4} stepHeaderLabel="Your offer">
+      <StepsWrapper
+        stepHeaderCurrent={4}
+        stepHeaderTotal={4}
+        stepHeaderLabel="Your offer"
+      >
         <LoadingSpinner label="Loading your offer details..." />
       </StepsWrapper>
     );
   }
 
-  if (!property || !selectedTerm || conditionAdjustmentPct === null || estimatedPrice === null) {
+  if (
+    !property ||
+    !selectedTerm ||
+    conditionAdjustmentPct === null ||
+    estimatedPrice === null
+  ) {
     return (
-      <StepsWrapper stepHeaderCurrent={4} stepHeaderTotal={4} stepHeaderLabel="Your offer">
+      <StepsWrapper
+        stepHeaderCurrent={4}
+        stepHeaderTotal={4}
+        stepHeaderLabel="Your offer"
+      >
         <ErrorState
-          message={error || assessmentError || "Unable to locate offer details."}
+          message={
+            error || assessmentError || "Unable to locate offer details."
+          }
           actionLabel="Start Over"
           onAction={() => navigate("/")}
         />
@@ -171,11 +183,11 @@ export const OfferPage = () => {
   }
 
   const startingValue = property?.startingValue ?? STARTING_VALUE;
-  
+
   const conditionAdjustmentAmount = Math.round(
     startingValue * (conditionAdjustmentPct / 100),
   );
-  
+
   const estimatedValue = startingValue + conditionAdjustmentAmount;
 
   const content = getOfferContent(selectedTerm);
@@ -190,7 +202,9 @@ export const OfferPage = () => {
     if (isAccepting) return;
 
     if (!property.userId) {
-      setAcceptError("We couldn't find your contact details. Please try again.");
+      setAcceptError(
+        "We couldn't find your contact details. Please try again.",
+      );
       return;
     }
 
@@ -227,7 +241,9 @@ export const OfferPage = () => {
     },
     {
       label: "Inspection",
-      value: selectedTerm.inspectionDescription ?? `${selectedTerm.inspectionDays}-day window`,
+      value:
+        selectedTerm.inspectionDescription ??
+        `${selectedTerm.inspectionDays}-day window`,
     },
     ...FIXED_DETAILS,
   ];
@@ -275,7 +291,8 @@ export const OfferPage = () => {
                 }`}
               >
                 {conditionAdjustmentPct > 0 ? "+" : ""}
-                {conditionAdjustmentPct}% ({conditionAdjustmentAmount > 0 ? "+" : ""}
+                {conditionAdjustmentPct}% (
+                {conditionAdjustmentAmount > 0 ? "+" : ""}
                 {formatCurrency(conditionAdjustmentAmount)})
               </span>
             </div>

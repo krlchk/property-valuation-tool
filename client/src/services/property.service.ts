@@ -7,7 +7,6 @@ import type {
 } from "@pvt/shared";
 import { request } from "./api";
 
-
 export const propertyService = {
   create: (input: CreatePropertyRequest): Promise<PropertyResponse> => {
     return request<PropertyResponse>("/properties", {
@@ -21,7 +20,9 @@ export const propertyService = {
     return request<PropertyResponse>(`/properties/${encodeURIComponent(id)}`);
   },
 
-  estimatePrice: (input: EstimatePropertyRequest): Promise<{ estimatedPrice: number }> => {
+  estimatePrice: (
+    input: EstimatePropertyRequest,
+  ): Promise<{ estimatedPrice: number }> => {
     return request<EstimateResponse>(`/properties/estimate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -29,7 +30,10 @@ export const propertyService = {
     });
   },
 
-  update: (id: string, input: Partial<UpdatePropertyRequest>): Promise<PropertyResponse> => {
+  update: (
+    id: string,
+    input: Partial<UpdatePropertyRequest>,
+  ): Promise<PropertyResponse> => {
     return request<PropertyResponse>(`/properties/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

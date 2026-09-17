@@ -50,7 +50,9 @@ export const PropertyFlowLayout = () => {
         if (controller.signal.aborted) return;
 
         console.error("Failed to load property flow:", error);
-        setLoadError("Failed to load this property's details. Please try again.");
+        setLoadError(
+          "Failed to load this property's details. Please try again.",
+        );
         setErrorAddressId(addressId);
       }
     };
@@ -68,7 +70,11 @@ export const PropertyFlowLayout = () => {
   ]);
 
   if (!addressId) {
-    return <p className="p-8 text-center text-sm text-red-700">Missing property ID.</p>;
+    return (
+      <p className="p-8 text-center text-sm text-red-700">
+        Missing property ID.
+      </p>
+    );
   }
 
   const isLoading = hydratedPropertyId !== addressId;

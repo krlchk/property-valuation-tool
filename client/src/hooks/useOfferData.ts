@@ -36,7 +36,8 @@ export const useOfferData = (addressId?: string) => {
     property,
     selectedTerm,
     timelineAdjustmentPct,
-    isLoading: isContextLoading || isTermLoading || (!property && !contextError),
+    isLoading:
+      isContextLoading || isTermLoading || (!property && !contextError),
     error: contextError,
   };
 };

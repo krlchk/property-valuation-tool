@@ -42,19 +42,18 @@ export const TIMELINE_OFFER_TERMS: Record<TimelineOption, OfferTerms> = {
   },
 };
 
-
 export const formatOfferTermsSummary = ({
   closingDaysMin,
   closingDaysMax,
   inspectionDays,
 }: OfferTerm): string => {
-  const closingText = closingDaysMax && closingDaysMax !== closingDaysMin
-    ? `${closingDaysMin}–${closingDaysMax} days`
-    : `${closingDaysMin} days`;
+  const closingText =
+    closingDaysMax && closingDaysMax !== closingDaysMin
+      ? `${closingDaysMin}–${closingDaysMax} days`
+      : `${closingDaysMin} days`;
 
-  const inspectionText = inspectionDays === 0
-    ? "no inspection"
-    : `${inspectionDays}-day inspection`;
+  const inspectionText =
+    inspectionDays === 0 ? "no inspection" : `${inspectionDays}-day inspection`;
 
   return `${closingText}, ${inspectionText}`;
 };
@@ -64,7 +63,10 @@ export const formatOfferTermsSummary = ({
 const RANGE_SPREAD_PCT = 0.02;
 const roundToHundred = (value: number) => Math.round(value / 100) * 100;
 
-export const getOfferPriceRange = (priceMultiplier: number, estimatedPrice: number) => {
+export const getOfferPriceRange = (
+  priceMultiplier: number,
+  estimatedPrice: number,
+) => {
   const midpoint = roundToHundred(estimatedPrice * priceMultiplier);
   return {
     low: roundToHundred(midpoint * (1 - RANGE_SPREAD_PCT / 2)),

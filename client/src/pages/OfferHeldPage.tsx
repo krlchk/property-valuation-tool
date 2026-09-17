@@ -4,9 +4,7 @@ import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
 import { useOfferData } from "../hooks/useOfferData";
 import { useRequireStep } from "../hooks/useRequireStep";
-import {
-  formatCurrency,
-} from "../utils/estimate";
+import { formatCurrency } from "../utils/estimate";
 import {
   formatOfferTermsSummary,
   getOfferPriceRange,
@@ -69,10 +67,11 @@ export const OfferHeldPage = () => {
 
       try {
         setIsEstimating(true);
-        const { estimatedPrice: totalPrice } = await propertyService.estimatePrice({
-          propId: property.id,
-          conditionAdjustmentPct: conditionAdjustmentPct ?? 0,
-        });
+        const { estimatedPrice: totalPrice } =
+          await propertyService.estimatePrice({
+            propId: property.id,
+            conditionAdjustmentPct: conditionAdjustmentPct ?? 0,
+          });
         if (isMounted) {
           setEstimatedPrice(totalPrice);
           setContextEstimatedPrice(totalPrice);
@@ -94,7 +93,12 @@ export const OfferHeldPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [conditionAdjustmentPct, contextEstimatedPrice, property?.id, setContextEstimatedPrice]);
+  }, [
+    conditionAdjustmentPct,
+    contextEstimatedPrice,
+    property?.id,
+    setContextEstimatedPrice,
+  ]);
 
   const isLoading = isOfferLoading || isEstimating || estimatedPrice === null;
 
@@ -128,10 +132,7 @@ export const OfferHeldPage = () => {
     );
   }
 
-  const { low, high } = getOfferPriceRange(
-    1,
-    estimatedPrice,
-  );
+  const { low, high } = getOfferPriceRange(1, estimatedPrice);
 
   const locationLabel = `${property.addressLine1}, ${property.city}`;
   const referenceId = property.id;
@@ -173,7 +174,10 @@ export const OfferHeldPage = () => {
 
           <div className="my-4 border-t border-custom-blue/15" />
 
-          <p className="text-sm text-slate-700">Reference №{referenceId}. Call or text (817) 555–0100, 8am to 7pm — a person answers.</p>
+          <p className="text-sm text-slate-700">
+            Reference №{referenceId}. Call or text (817) 555–0100, 8am to 7pm —
+            a person answers.
+          </p>
         </div>
 
         <ul className="mt-4 space-y-3">
@@ -186,9 +190,7 @@ export const OfferHeldPage = () => {
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div>
-                <p className="text-sm font-bold text-slate-900">
-                  {step.title}
-                </p>
+                <p className="text-sm font-bold text-slate-900">{step.title}</p>
                 <p className="mt-1 text-xs text-slate-600">
                   {step.description}
                 </p>

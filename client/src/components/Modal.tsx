@@ -38,7 +38,7 @@ export const Modal = ({ open, onClose, title, children }: ModalProps) => {
       }}
       className="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl p-0 backdrop:fixed backdrop:inset-0 backdrop:bg-black/40"
     >
-      <div className="max-h-[80vh] overscroll-contain overflow-y-auto p-5">
+      <div className="max-h-[80vh] overflow-y-auto overscroll-contain p-5">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-slate-900">{title}</h2>
           <button

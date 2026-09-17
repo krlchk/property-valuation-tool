@@ -27,12 +27,8 @@ export const AnalyzingPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
 
-  const {
-    property,
-    photos,
-    setConditionAdjustmentPct,
-    setEstimatedPrice,
-  } = useValuation();
+  const { property, photos, setConditionAdjustmentPct, setEstimatedPrice } =
+    useValuation();
 
   useRequireStep("offer");
 

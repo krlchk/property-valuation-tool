@@ -9,14 +9,18 @@ import { offerTermsService } from "../services/offer-terms.service";
 export const ValuationProvider = ({ children }: { children: ReactNode }) => {
   const [property, setProperty] = useState<PropertyResponse | null>(null);
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
-  const [hydratedPropertyId, setHydratedPropertyId] = useState<string | null>(null);
+  const [hydratedPropertyId, setHydratedPropertyId] = useState<string | null>(
+    null,
+  );
   const [selectedTerm, setSelectedTerm] = useState<OfferTerm | null>(null);
-  const [conditionAdjustmentPct, setConditionAdjustmentPct] = useState<number | null>(null);
+  const [conditionAdjustmentPct, setConditionAdjustmentPct] = useState<
+    number | null
+  >(null);
   const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
   const [contact, setContact] = useState<ContactInfo>(EMPTY_CONTACT);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const fetchPropertyById = useCallback(async (id: string) => {
     setIsLoading(true);
     setError(null);

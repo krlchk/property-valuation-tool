@@ -57,15 +57,14 @@ export const AddressPage = () => {
   const [propertyPrice, setPropertyPrice] = useState<number | null>(
     () => property?.startingValue ?? null,
   );
-  const [priceInput, setPriceInput] = useState<string>(
-    () =>
-      property?.startingValue
-        ? property.startingValue.toLocaleString("en-US")
-        : "",
+  const [priceInput, setPriceInput] = useState<string>(() =>
+    property?.startingValue
+      ? property.startingValue.toLocaleString("en-US")
+      : "",
   );
 
-  const [selectedAddress, setSelectedAddress] = useState<NormalizedAddress | null>(
-    () => {
+  const [selectedAddress, setSelectedAddress] =
+    useState<NormalizedAddress | null>(() => {
       if (property && property.latitude != null && property.longitude != null) {
         return {
           addressLine1: property.addressLine1,
@@ -79,8 +78,7 @@ export const AddressPage = () => {
         };
       }
       return null;
-    },
-  );
+    });
 
   useEffect(() => {
     if (selectedPropertyId && property?.id !== selectedPropertyId) {
@@ -140,7 +138,8 @@ export const AddressPage = () => {
       setIsSearching(true);
       setSearchError(null);
 
-      addressService.search(trimmedQuery, controller.signal)
+      addressService
+        .search(trimmedQuery, controller.signal)
         .then((results) => {
           if (cancelled) return;
           setSuggestions(results);
@@ -348,7 +347,7 @@ export const AddressPage = () => {
           </div>
         </form>
 
-        <ul className="mt-4 rounded-2xl border border-gray-300 overflow-hidden">
+        <ul className="mt-4 overflow-hidden rounded-2xl border border-gray-300">
           <li>
             <button
               type="button"
@@ -392,11 +391,12 @@ export const AddressPage = () => {
           })}
         </ul>
 
-        {trimmedQuery.length >= MIN_QUERY_LENGTH && visibleMatches.length === 0 && (
-          <p className="mt-2 text-center text-xs text-gray-500">
-            {searchStatusLabel}
-          </p>
-        )}
+        {trimmedQuery.length >= MIN_QUERY_LENGTH &&
+          visibleMatches.length === 0 && (
+            <p className="mt-2 text-center text-xs text-gray-500">
+              {searchStatusLabel}
+            </p>
+          )}
 
         {(canShowMore || canCollapse) && (
           <button

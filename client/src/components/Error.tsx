@@ -1,4 +1,3 @@
-
 interface ErrorStateProps {
   message: string;
   title?: string;

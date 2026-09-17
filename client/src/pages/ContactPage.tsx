@@ -60,7 +60,7 @@ export const ContactPage = () => {
         console.error("Failed to load property user:", error);
         setLoadedUserId(userId);
         setContactError("We couldn't load your saved contact details.");
-      })
+      });
 
     return () => controller.abort();
   }, [property?.userId, setContact]);

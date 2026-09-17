@@ -158,7 +158,8 @@ export const PropertyPhotosPage = () => {
         )
         .map((result) => result.value);
       const failures = results.filter(
-        (result): result is PromiseRejectedResult => result.status === "rejected",
+        (result): result is PromiseRejectedResult =>
+          result.status === "rejected",
       );
 
       if (failures.length > 0) {
@@ -242,8 +243,8 @@ export const PropertyPhotosPage = () => {
         </h1>
 
         <p className="mt-3 text-body-sm text-slate-600">
-          {locationLabel} — the first {TARGET_PHOTOS} photos are what our AI grades, so
-          cover the whole place.
+          {locationLabel} — the first {TARGET_PHOTOS} photos are what our AI
+          grades, so cover the whole place.
         </p>
 
         <ul className="mt-6 flex flex-wrap gap-2 text-xs">

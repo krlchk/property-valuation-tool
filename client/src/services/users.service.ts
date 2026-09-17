@@ -1,8 +1,4 @@
-import type {
-  CreateUserPayload,
-  UpdateUserPayload,
-  User,
-} from "@pvt/shared";
+import type { CreateUserPayload, UpdateUserPayload, User } from "@pvt/shared";
 import { request } from "./api";
 
 type UpsertUserPayload = CreateUserPayload & {
