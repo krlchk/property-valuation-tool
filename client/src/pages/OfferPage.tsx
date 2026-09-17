@@ -1,20 +1,17 @@
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { StepsWrapper } from "../components/StepsWrapper";
-import { useValuation } from "../context/ValuationContext";
+import { LoadingSpinner } from "../components/Loading";
+import { ErrorState } from "../components/Error";
+import { useOfferData } from "../hooks/useOfferData";
 import { useRequireStep } from "../hooks/useRequireStep";
-import type { TimelineOption } from "../types/timeline";
-import {
-  ADJUSTMENT_AMOUNT,
-  CONDITION_ADJUSTMENT_PCT,
-  ESTIMATED_VALUE,
-  STARTING_VALUE,
-  formatCurrency,
-} from "../utils/estimate";
-import {
-  DEFAULT_TIMELINE,
-  TIMELINE_OFFER_TERMS,
-  getOfferPriceRange,
-} from "../utils/offerTerms";
+import { useValuation } from "../context/ValuationContext";
+import { aiReviewService } from "../services/ai-review.service";
+import { offersService } from "../services/offers.service";
+import { propertyService } from "../services/property.service";
+import type { OfferTerm, PropertyAIReview } from "@pvt/shared";
+import { STARTING_VALUE, formatCurrency } from "../utils/estimate";
+import { getOfferPriceRange } from "../utils/offerTerms";
 
 const OFFER_VALIDITY_DAYS = 14;
 
@@ -24,50 +21,256 @@ const FIXED_DETAILS = [
   { label: "Fees at closing", value: "$0" },
 ];
 
-// Page-specific copy per timeline — pricing/closing/inspection terms
-// themselves live in utils/offerTerms.ts, shared with OfferHeldPage.
-const TIMELINE_OFFER_CONTENT: Record<
-  TimelineOption,
-  { eyebrow: string; subtitle: string; note: string }
-> = {
-  asap: {
-    eyebrow: "Seven-day cash offer",
-    subtitle: "Priced for a seven-day close. More photos tighten the range.",
-    note: "No inspection, no repairs, no fees. Name the closing day and we hit it.",
-  },
-  "3-months": {
-    eyebrow: "Thirty-day offer",
-    subtitle: "Priced for a thirty-day close. More photos tighten the range.",
-    note: "A five-day look at the property, then we close. Repairs still on us.",
-  },
-  "12-months": {
+const getOfferContent = (term: OfferTerm) => {
+  const timelineAdjustmentPct = Math.round((term.priceMultiplier - 1) * 100);
+
+  if (timelineAdjustmentPct <= -15) {
+    return {
+      eyebrow: "Seven-day cash offer",
+      subtitle: `Priced for a ${term.closingDaysMin}-day close. More photos tighten the range.`,
+      note: "No inspection, no repairs, no fees. Name the closing day and we hit it.",
+    };
+  }
+
+  if (timelineAdjustmentPct < 0) {
+    return {
+      eyebrow: "Thirty-day offer",
+      subtitle: `Priced for a ${term.closingDaysMin}-day close. More photos tighten the range.`,
+      note: `${term.inspectionDescription ?? `${term.inspectionDays}-day inspection`}, then we close. Repairs still on us.`,
+    };
+  }
+
+  return {
     eyebrow: "Full-value offer",
     subtitle:
       "Priced at full value on a normal timeline. More photos tighten the range.",
-    note: "Ten days of due diligence, a normal close, and the top number we can write.",
-  },
+    note: `${term.inspectionDescription ?? `${term.inspectionDays}-day due diligence`}, a normal close, and the top number we can write.`,
+  };
 };
 
 export const OfferPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { timeline } = useValuation();
+  const { property, selectedTerm, timelineAdjustmentPct, isLoading, error } =
+    useOfferData(addressId);
+  const {
+    conditionAdjustmentPct,
+    setConditionAdjustmentPct,
+    estimatedPrice,
+    setEstimatedPrice,
+  } = useValuation();
+  const [isAssessing, setIsAssessing] = useState(false);
+  const [assessmentError, setAssessmentError] = useState<string | null>(null);
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
+  const assessmentKeyRef = useRef<string | null>(null);
+  const storedReviewKeyRef = useRef<string | null>(null);
+
   useRequireStep("offer");
 
-  const selectedTimeline = timeline ?? DEFAULT_TIMELINE;
-  const content = TIMELINE_OFFER_CONTENT[selectedTimeline];
-  const terms = TIMELINE_OFFER_TERMS[selectedTimeline];
+  useEffect(() => {
+    if (!property?.id || !selectedTerm) return;
+    if (conditionAdjustmentPct !== null && estimatedPrice !== null) return;
 
-  const { low, high } = getOfferPriceRange(terms.priceMultiplier);
+    const assessmentKey = `${property.id}:${selectedTerm.id}`;
+    if (assessmentKeyRef.current === assessmentKey) return;
+    assessmentKeyRef.current = assessmentKey;
 
-  const timelineAdjustmentPct = Math.round((terms.priceMultiplier - 1) * 100);
-  const timelineAdjustmentAmount = Math.round(
-    ESTIMATED_VALUE * (terms.priceMultiplier - 1),
+    let isMounted = true;
+
+    const assessProperty = async () => {
+      setIsAssessing(true);
+      setAssessmentError(null);
+
+      try {
+        let adjustmentPct = conditionAdjustmentPct;
+        let review: PropertyAIReview | null = null;
+        let finalEstimatedPrice = estimatedPrice;
+
+        if (adjustmentPct === null) {
+          review = await aiReviewService.reviewPropertyById(property.id);
+          if (!isMounted) return;
+
+          adjustmentPct = review.totalAdjustmentPct;
+          setConditionAdjustmentPct(adjustmentPct);
+        }
+
+        if (estimatedPrice === null) {
+          const estimate = await propertyService.estimatePrice({
+            propId: property.id,
+            conditionAdjustmentPct: adjustmentPct,
+          });
+          if (!isMounted) return;
+
+          finalEstimatedPrice = estimate.estimatedPrice;
+          setEstimatedPrice(finalEstimatedPrice);
+        }
+
+        if (
+          review &&
+          adjustmentPct !== null &&
+          finalEstimatedPrice !== null &&
+          storedReviewKeyRef.current !== assessmentKey
+        ) {
+          const conditionAmount = Math.round(
+            property.startingValue * (adjustmentPct / 100),
+          );
+          const estimatedValue = property.startingValue + conditionAmount;
+
+          await aiReviewService.storePropertyReview(property.id, {
+            estimatedPrice: estimatedValue,
+            conditionAdjustmentPct: adjustmentPct,
+            offerTermPct: Math.round((selectedTerm.priceMultiplier - 1) * 100),
+            finalEstimatedPrice,
+            reviewResponse: review,
+          });
+          storedReviewKeyRef.current = assessmentKey;
+        }
+      } catch (requestError: unknown) {
+        if (!isMounted) return;
+
+        console.error("Failed to assess property:", requestError);
+        setAssessmentError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to calculate your offer. Please try again.",
+        );
+      } finally {
+        if (isMounted) setIsAssessing(false);
+      }
+    };
+
+    void assessProperty();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    conditionAdjustmentPct,
+    estimatedPrice,
+    property?.id,
+    selectedTerm,
+    setConditionAdjustmentPct,
+    setEstimatedPrice,
+    property?.startingValue,
+  ]);
+
+  if (error || assessmentError) {
+    return (
+      <StepsWrapper
+        stepHeaderCurrent={4}
+        stepHeaderTotal={4}
+        stepHeaderLabel="Your offer"
+      >
+        <ErrorState
+          message={
+            error || assessmentError || "Unable to calculate your offer."
+          }
+          actionLabel="Start Over"
+          onAction={() => navigate("/")}
+        />
+      </StepsWrapper>
+    );
+  }
+
+  if (isLoading || isAssessing) {
+    return (
+      <StepsWrapper
+        stepHeaderCurrent={4}
+        stepHeaderTotal={4}
+        stepHeaderLabel="Your offer"
+      >
+        <LoadingSpinner label="Loading your offer details..." />
+      </StepsWrapper>
+    );
+  }
+
+  if (
+    !property ||
+    !selectedTerm ||
+    conditionAdjustmentPct === null ||
+    estimatedPrice === null
+  ) {
+    return (
+      <StepsWrapper
+        stepHeaderCurrent={4}
+        stepHeaderTotal={4}
+        stepHeaderLabel="Your offer"
+      >
+        <ErrorState
+          message={
+            error || assessmentError || "Unable to locate offer details."
+          }
+          actionLabel="Start Over"
+          onAction={() => navigate("/")}
+        />
+      </StepsWrapper>
+    );
+  }
+
+  const startingValue = property?.startingValue ?? STARTING_VALUE;
+
+  const conditionAdjustmentAmount = Math.round(
+    startingValue * (conditionAdjustmentPct / 100),
   );
 
+  const estimatedValue = startingValue + conditionAdjustmentAmount;
+
+  const content = getOfferContent(selectedTerm);
+
+  const { low, high } = getOfferPriceRange(1, estimatedPrice);
+
+  const timelineAdjustmentAmount = Math.round(
+    estimatedValue * (selectedTerm.priceMultiplier - 1),
+  );
+
+  const handleAcceptOffer = async () => {
+    if (isAccepting) return;
+
+    if (!property.userId) {
+      setAcceptError(
+        "We couldn't find your contact details. Please try again.",
+      );
+      return;
+    }
+
+    setIsAccepting(true);
+    setAcceptError(null);
+
+    try {
+      await offersService.create({
+        propertyId: property.id,
+        userId: property.userId,
+        minPrice: low,
+        maxPrice: high,
+        status: "accepted",
+      });
+      navigate(`/addresses/${addressId}/offer/held`);
+    } catch (requestError: unknown) {
+      console.error("Failed to accept offer:", requestError);
+      setAcceptError(
+        requestError instanceof Error
+          ? requestError.message
+          : "We couldn't accept your offer. Please try again.",
+      );
+    } finally {
+      setIsAccepting(false);
+    }
+  };
+
   const detailBoxes = [
-    { label: "Closing date", value: terms.closingDate },
-    { label: "Inspection", value: terms.inspection },
+    {
+      label: "Closing date",
+      value: selectedTerm.closingDaysMax
+        ? `${selectedTerm.closingDaysMin}–${selectedTerm.closingDaysMax} days`
+        : `${selectedTerm.closingDaysMin} days`,
+    },
+    {
+      label: "Inspection",
+      value:
+        selectedTerm.inspectionDescription ??
+        `${selectedTerm.inspectionDays}-day window`,
+    },
     ...FIXED_DETAILS,
   ];
 
@@ -79,6 +282,12 @@ export const OfferPage = () => {
       stepHeaderOnBack={() => navigate(`/addresses/${addressId}/timeline`)}
     >
       <div className="mt-5">
+        {acceptError && (
+          <p className="mb-3 rounded-xl bg-red-50 p-3 text-xs text-red-700">
+            {acceptError}
+          </p>
+        )}
+
         <h1 className="font-serif text-hero leading-[1.15]">
           Here's your offer.
         </h1>
@@ -93,7 +302,7 @@ export const OfferPage = () => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-900">Starting value:</span>
               <span className="text-base font-bold text-slate-900">
-                {formatCurrency(STARTING_VALUE)}
+                {formatCurrency(startingValue)}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -102,14 +311,15 @@ export const OfferPage = () => {
               </span>
               <span
                 className={`text-base font-bold ${
-                  CONDITION_ADJUSTMENT_PCT < 0
+                  conditionAdjustmentPct < 0
                     ? "text-rose-800"
                     : "text-emerald-800"
                 }`}
               >
-                {CONDITION_ADJUSTMENT_PCT > 0 ? "+" : ""}
-                {CONDITION_ADJUSTMENT_PCT}% ({ADJUSTMENT_AMOUNT > 0 ? "+" : ""}
-                {formatCurrency(ADJUSTMENT_AMOUNT)})
+                {conditionAdjustmentPct > 0 ? "+" : ""}
+                {conditionAdjustmentPct}% (
+                {conditionAdjustmentAmount > 0 ? "+" : ""}
+                {formatCurrency(conditionAdjustmentAmount)})
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -158,10 +368,11 @@ export const OfferPage = () => {
 
         <button
           type="button"
-          onClick={() => navigate(`/addresses/${addressId}/offer/held`)}
-          className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500"
+          onClick={handleAcceptOffer}
+          disabled={isAccepting}
+          className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Accept this offer
+          {isAccepting ? "Accepting offer..." : "Accept this offer"}
         </button>
 
         <button

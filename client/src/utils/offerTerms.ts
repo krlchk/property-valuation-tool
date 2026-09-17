@@ -1,5 +1,6 @@
+import type { OfferTerm } from "@pvt/shared";
 import type { TimelineOption } from "../types/timeline";
-import { ESTIMATED_VALUE } from "./estimate";
+// import { ESTIMATED_VALUE } from "./estimate";
 
 // Reasonable default while the user hasn't picked a timeline yet (e.g.
 // landed on /offer or /offer/held directly) — mirrors the old flat
@@ -41,13 +42,32 @@ export const TIMELINE_OFFER_TERMS: Record<TimelineOption, OfferTerms> = {
   },
 };
 
+export const formatOfferTermsSummary = ({
+  closingDaysMin,
+  closingDaysMax,
+  inspectionDays,
+}: OfferTerm): string => {
+  const closingText =
+    closingDaysMax && closingDaysMax !== closingDaysMin
+      ? `${closingDaysMin}–${closingDaysMax} days`
+      : `${closingDaysMin} days`;
+
+  const inspectionText =
+    inspectionDays === 0 ? "no inspection" : `${inspectionDays}-day inspection`;
+
+  return `${closingText}, ${inspectionText}`;
+};
+
 // Cosmetic spread around the timeline-adjusted midpoint, just so the offer
 // reads as a range (like the design) instead of one crisp number.
 const RANGE_SPREAD_PCT = 0.02;
 const roundToHundred = (value: number) => Math.round(value / 100) * 100;
 
-export const getOfferPriceRange = (priceMultiplier: number) => {
-  const midpoint = roundToHundred(ESTIMATED_VALUE * priceMultiplier);
+export const getOfferPriceRange = (
+  priceMultiplier: number,
+  estimatedPrice: number,
+) => {
+  const midpoint = roundToHundred(estimatedPrice * priceMultiplier);
   return {
     low: roundToHundred(midpoint * (1 - RANGE_SPREAD_PCT / 2)),
     high: roundToHundred(midpoint * (1 + RANGE_SPREAD_PCT / 2)),

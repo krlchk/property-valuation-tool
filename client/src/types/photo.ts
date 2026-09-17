@@ -5,4 +5,5 @@ export type UploadedPhoto = {
   size: number;
   lastModified: number;
   category: string;
+  contentHash?: string;
 };

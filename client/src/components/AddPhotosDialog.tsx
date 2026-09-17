@@ -2,7 +2,7 @@ import { useState, type ChangeEvent } from "react";
 import { Modal } from "./Modal";
 import { Toast } from "./Toast";
 import { PlusIcon } from "./icons";
-import { dedupeFiles } from "../utils/photoFiles";
+import { getFileContentHash } from "../utils/photoHash";
 import type { UploadedPhoto } from "../types/photo";
 
 type AddPhotosDialogProps = {
@@ -38,11 +38,26 @@ export const AddPhotosDialog = ({
     onClose();
   };
 
-  const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFiles = async (event: ChangeEvent<HTMLInputElement>) => {
     const picked = event.target.files ? Array.from(event.target.files) : [];
-    const unique = dedupeFiles(picked, existingPhotos);
+    const input = event.currentTarget;
+    const unique: File[] = [];
+    const seenHashes = new Set(
+      existingPhotos
+        .map((photo) => photo.contentHash)
+        .filter((hash): hash is string => Boolean(hash)),
+    );
 
-    const duplicateCount = picked.length - unique.length;
+    for (const file of [...files, ...picked]) {
+      const hash = await getFileContentHash(file);
+      if (seenHashes.has(hash)) continue;
+      seenHashes.add(hash);
+      unique.push(file);
+    }
+
+    const newlyAccepted = unique.length - files.length;
+
+    const duplicateCount = picked.length - newlyAccepted;
     setDuplicateNotice(
       duplicateCount === 0
         ? null
@@ -52,6 +67,9 @@ export const AddPhotosDialog = ({
     );
 
     setFiles(unique.slice(0, remainingSlots));
+    // Allow the user to choose the same file again after removing it from
+    // the pending selection.
+    input.value = "";
   };
 
   // MVP: category list is fixed (see PHOTO_CATEGORIES in PropertyPhotosPage).

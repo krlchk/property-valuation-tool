@@ -1,4 +1,5 @@
 import type { AddressSuggestion, NormalizedAddress } from "@pvt/shared";
+import { EXCLUDED_PROPERTIES } from "../../utils/exlcuded-props";
 
 const PLACES_AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete";
 const PLACES_DETAILS_URL = "https://places.googleapis.com/v1/places";
@@ -11,6 +12,7 @@ export class IncompleteAddressError extends Error {}
 type GooglePlacePrediction = {
   placeId: string;
   text?: { text: string };
+  // types?: string [];
 };
 
 type GooglePlacesAutocompleteResponse = {
@@ -50,6 +52,8 @@ export const searchAddresses = async (query: string): Promise<AddressSuggestion[
 
   const data = (await response.json()) as GooglePlacesAutocompleteResponse;
 
+  // console.log((data.suggestions ?? []).map((item) => item.placePrediction?.types))
+
   return (data.suggestions ?? [])
     .map((suggestion) => suggestion.placePrediction)
     .filter((prediction): prediction is GooglePlacePrediction => Boolean(prediction))
@@ -68,6 +72,7 @@ type GoogleAddressComponent = {
 type GooglePlaceDetailsResponse = {
   addressComponents?: GoogleAddressComponent[];
   location?: { latitude: number; longitude: number };
+  types?: string[];
 };
 
 const findComponent = (
@@ -89,7 +94,7 @@ export const getNormalizedAddress = async (
     {
       headers: {
         "X-Goog-Api-Key": apiKey,
-        "X-Goog-FieldMask": "addressComponents,location",
+        "X-Goog-FieldMask": "addressComponents,location,types",
       },
     },
   );
@@ -103,6 +108,16 @@ export const getNormalizedAddress = async (
   }
 
   const data = (await response.json()) as GooglePlaceDetailsResponse;
+
+  const placeTypes = data.types ?? [];
+  const isExcludedType = placeTypes.some((type) => EXCLUDED_PROPERTIES.has(type));
+
+  if (isExcludedType) {
+    throw new IncompleteAddressError(
+      "Selected location is a non-residential or public facility",
+    );
+  }
+
   const components = data.addressComponents ?? [];
 
   const country = findComponent(components, "country")?.shortText;

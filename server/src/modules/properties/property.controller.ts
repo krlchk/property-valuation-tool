@@ -1,5 +1,52 @@
-import type { Request, Response } from "express";
-import { createProperty } from "./property.service";
+import type { Request, Response, NextFunction } from "express";
+import { createProperty, deleteProperty, getAllProperties, getPropertyById, updateProperty } from "./property.service";
+import { DEFAULT_LIMIT, DEFAULT_PAGE, getIdFromParam, MAX_LIMIT, parsePaginationParam } from "../../utils/query";
+import { getOfferTermsById } from "../offer-terms/offer-terms.service";
+import { EstimatePropertyRequest } from "@pvt/shared";
+
+export const getAllPropertiesController = async (req: Request, res: Response) => {
+  try {
+    const page = parsePaginationParam(req.query.page, DEFAULT_PAGE);
+    const limit = parsePaginationParam(req.query.limit, DEFAULT_LIMIT);
+
+    if (page === null || limit === null || limit > MAX_LIMIT) {
+      return res.status(400).json({
+        error: `page and limit must be positive integers; limit cannot exceed ${MAX_LIMIT}`,
+      });
+    }
+
+    const result = await getAllProperties(page, limit);
+
+    return res.status(200).json({
+      items: result.data,
+      pagination: {
+        page,
+        limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / limit),
+      },
+    });
+  } catch (error: any) {
+    console.error("Failed to fetch properties:", error);
+    return res.status(500).json({ error: error?.message || "Failed to fetch properties" });
+  }
+};
+
+export const getPropertyByIdController = async(req: Request, res: Response, next: NextFunction) => {
+  const { id } = getIdFromParam(req);
+
+  if (!id) {
+    return res.status(400).json({ error: 'Property ID is required' });
+  }
+
+  const property = await getPropertyById(id);
+
+  if (!property) {
+    return res.status(404).json({ error: 'Property not found' });
+  }
+
+  return res.status(200).json(property);
+}
 
 export const createPropertyController = async (req: Request, res: Response) => {
   try {
@@ -12,12 +59,15 @@ export const createPropertyController = async (req: Request, res: Response) => {
       longitude,
       addressProvider,
       providerPlaceId,
+      startingValue,
     } = req.body;
+  
     if (!addressLine1 || !city || !state || !postalCode) {
       return res.status(400).json({
         error: "Missing required property fields",
       });
     }
+
     const property = await createProperty({
       addressLine1,
       city,
@@ -27,8 +77,11 @@ export const createPropertyController = async (req: Request, res: Response) => {
       longitude,
       addressProvider,
       providerPlaceId,
+      startingValue,
     });
+  
     return res.status(201).json(property);
+
   } catch (error) {
     console.error("Failed to create property:", error);
     return res.status(500).json({
@@ -36,3 +89,136 @@ export const createPropertyController = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const estimatePropertyPriceController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const { propId, conditionAdjustmentPct } = req.body as EstimatePropertyRequest; 
+
+    const property = await getPropertyById(propId);
+
+    if (!property) {
+      return res.status(404).json({
+        error: `Property ${propId} not found`,
+      })
+    }
+
+    if (!property.offerTermsId) {
+      return res.status(400).json({
+        error: `Property ${propId} does not have an offer term selected`,
+      })
+    }
+
+    const offerTerm = await getOfferTermsById(property.offerTermsId);
+
+    if (!offerTerm) {
+      return res.status(404).json({
+        error: `Offer term ${property.offerTermsId} not found`,
+      })
+    }
+
+    const parsedConditionAdjustmentPct = Number(conditionAdjustmentPct);
+    const safeConditionAdjustmentPct = Number.isFinite(parsedConditionAdjustmentPct)
+      ? parsedConditionAdjustmentPct
+      : 0;
+    const conditionAdjustmentAmount = Math.round(
+      property.startingValue * (safeConditionAdjustmentPct / 100),
+    );
+  
+    const estimatedValue = property.startingValue + conditionAdjustmentAmount;
+
+    const totalEstimatedPrice = Math.round(
+      estimatedValue * offerTerm.priceMultiplier,
+    );
+
+    return res.json({ estimatedPrice: totalEstimatedPrice });
+  } catch (error) {  
+    console.error("Failed to estimate property price:", error);
+    
+    return res.status(500).json({
+      error: "Failed to estimate property price",
+    });
+  }
+};
+
+export const updatePropertyController = async (req: Request, res: Response) => {
+  try {
+    const { id } = getIdFromParam(req);
+
+    if (!id) {
+      return res.status(400).json({
+        error: "Property ID is required",
+      });
+    }
+
+    const {
+      addressLine1,
+      city,
+      state,
+      postalCode,
+      latitude,
+      longitude,
+      addressProvider,
+      providerPlaceId,
+      squareFeet,
+      startingValue,
+      offerTermsId,
+      userId,
+    } = req.body;
+
+    const property = await updateProperty(id, {
+      addressLine1,
+      city,
+      state,
+      postalCode,
+      latitude,
+      longitude,
+      addressProvider,
+      providerPlaceId,
+      squareFeet,
+      startingValue,
+      offerTermsId,
+      userId,
+    });
+
+    if (!property) {
+      return res.status(404).json({
+        error: "Property not found",
+      });
+    }
+
+    return res.status(200).json(property);
+
+  } catch (error) {
+    console.error("Failed to update property:", error);
+    return res.status(500).json({
+      error: "Failed to update property",
+    });
+  }
+};
+
+export const deletePropertyController = async (req: Request, res: Response) => {
+  const { id } = getIdFromParam(req);
+
+  if (!id) {
+    return res.status(400).json({ error: 'Property ID is required' });
+  }
+
+  try {
+    const affected = await deleteProperty(id);
+    
+    if (!affected) {
+      throw new Error();
+    }
+
+    return res.status(204).json(null);
+  } catch (error) {
+    console.error('Failed to delete property: ' + error);
+
+    return res.status(500).json({
+      error: "Failed to delete property",
+    });
+  }
+}

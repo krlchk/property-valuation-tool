@@ -34,7 +34,7 @@ export const StepHeader = ({
             type="button"
             onClick={handleBack}
             aria-label="Go back"
-            className="-ml-1 mt-2 cursor-pointer p-1 text-label text-gray-500"
+            className="mt-2 -ml-1 cursor-pointer p-1 text-label text-gray-500"
           >
             Back
           </button>

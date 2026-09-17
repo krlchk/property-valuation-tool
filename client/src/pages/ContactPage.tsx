@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CheckIcon } from "../components/icons";
 import { FormField } from "../components/FormField";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { useValuation } from "../context/ValuationContext";
 import { useRequireStep } from "../hooks/useRequireStep";
+import { propertyService } from "../services/property.service";
+import { usersService } from "../services/users.service";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_MIN_LENGTH = 2;
@@ -16,7 +18,7 @@ type Field = "name" | "phone" | "email";
 export const ContactPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
-  const { property, photos, contact, setContact } = useValuation();
+  const { property, photos, contact, setContact, setProperty } = useValuation();
   useRequireStep("contact");
   const { name, phone, email, agreed } = contact;
 
@@ -25,6 +27,43 @@ export const ContactPage = () => {
     phone: false,
     email: false,
   });
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [contactError, setContactError] = useState<string | null>(null);
+  const isLoadingUser = Boolean(
+    property?.userId && loadedUserId !== property.userId,
+  );
+
+  useEffect(() => {
+    if (!property?.userId) return;
+
+    const controller = new AbortController();
+    const userId = property.userId;
+
+    usersService
+      .getById(userId)
+      .then((user) => {
+        if (controller.signal.aborted) return;
+
+        setLoadedUserId(userId);
+        setContactError(null);
+        setContact((current) => ({
+          ...current,
+          name: user.name,
+          phone: user.mobileNumber ?? "",
+          email: user.email,
+        }));
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+
+        console.error("Failed to load property user:", error);
+        setLoadedUserId(userId);
+        setContactError("We couldn't load your saved contact details.");
+      });
+
+    return () => controller.abort();
+  }, [property?.userId, setContact]);
 
   const updateContact = (patch: Partial<typeof contact>) =>
     setContact({ ...contact, ...patch });
@@ -61,9 +100,39 @@ export const ContactPage = () => {
     ? `${property.addressLine1}, ${property.city}`
     : `Property #${addressId}`;
 
-  const handleSubmit = () => {
-    if (!canSubmit) return;
-    navigate(`/addresses/${addressId}/analyzing`);
+  const handleSubmit = async () => {
+    if (!canSubmit || isSubmitting || !addressId) return;
+
+    setIsSubmitting(true);
+    setContactError(null);
+
+    try {
+      const user = await usersService.upsert({
+        ...(property?.userId ? { id: property.userId } : {}),
+        name: name.trim(),
+        email: email.trim(),
+        mobileNumber: phone.trim(),
+      });
+
+      if (property?.userId !== user.id) {
+        const updatedProperty = await propertyService.update(
+          property?.id ?? addressId,
+          { userId: user.id },
+        );
+        setProperty(updatedProperty);
+      }
+
+      navigate(`/addresses/${addressId}/analyzing`);
+    } catch (error: unknown) {
+      console.error("Failed to save contact details:", error);
+      setContactError(
+        error instanceof Error
+          ? error.message
+          : "We couldn't save your contact details. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -73,6 +142,12 @@ export const ContactPage = () => {
       stepHeaderLabel="Step 4 of 4 · Contact"
     >
       <div className="mt-5">
+        {contactError && (
+          <p className="mb-3 rounded-xl bg-red-50 p-3 text-xs text-red-700">
+            {contactError}
+          </p>
+        )}
+
         <h1 className="font-serif text-hero leading-[1.15]">
           Where should the offer go?
         </h1>
@@ -138,7 +213,7 @@ export const ContactPage = () => {
           <span className="text-sm text-slate-700">
             Yes, I understand and agree to the{" "}
             <span className="text-custom-blue underline">
-              instacashly Terms of Use
+              Instacashly Terms of Use
             </span>{" "}
             and{" "}
             <span className="text-custom-blue underline">Privacy Policy</span>.
@@ -148,12 +223,12 @@ export const ContactPage = () => {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!canSubmit}
+          disabled={!canSubmit || isSubmitting || isLoadingUser}
           className="mt-6 w-full rounded-full bg-custom-yellow py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-[#E8F4FD] disabled:opacity-50"
         >
-          See my offer
+          {isSubmitting ? "Saving your details..." : "See my offer"}
         </button>
-        {!canSubmit && (
+        {!canSubmit && !contactError && (
           <p className="mt-2 text-center text-xs text-slate-500">
             Name, phone, email, and the terms box.
           </p>

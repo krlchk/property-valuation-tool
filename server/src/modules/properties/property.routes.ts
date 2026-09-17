@@ -1,6 +1,18 @@
 import { Router } from "express";
-import { createPropertyController } from "./property.controller";
+import {
+  createPropertyController,
+  deletePropertyController,
+  estimatePropertyPriceController,
+  getAllPropertiesController,
+  getPropertyByIdController,
+  updatePropertyController,
+} from "./property.controller";
 
 export const propertyRouter = Router();
 
+propertyRouter.get("/", getAllPropertiesController);
+propertyRouter.get("/:id", getPropertyByIdController);
 propertyRouter.post("/", createPropertyController);
+propertyRouter.post("/estimate", estimatePropertyPriceController);
+propertyRouter.patch("/:id", updatePropertyController);
+propertyRouter.delete("/:id", deletePropertyController);
