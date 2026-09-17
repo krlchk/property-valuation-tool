@@ -1,11 +1,5 @@
-import type { EvaluatedComponentResult } from "@pvt/shared";
+import type { PropertyAIReview, StorePropertyAIReviewInput } from "@pvt/shared";
 import { request } from "./api";
-
-export type PropertyAIReview = {
-  propertyId: string;
-  evaluations: EvaluatedComponentResult[];
-  totalAdjustmentPct: number;
-};
 
 const inFlightReviews = new Map<string, Promise<PropertyAIReview>>();
 
@@ -28,5 +22,19 @@ export const aiReviewService = {
     reviewRequest.then(clearRequest, clearRequest);
 
     return reviewRequest;
+  },
+
+  storePropertyReview: (
+    propertyId: string,
+    input: StorePropertyAIReviewInput,
+  ): Promise<void> => {
+    return request<void>(
+      `/ai-reviews/property/${encodeURIComponent(propertyId)}/store`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      },
+    );
   },
 };

@@ -15,9 +15,10 @@ const VALID_STATUSES: OfferStatus[] = ["accepted", "proccessed", "done"];
 const isOfferStatus = (val: unknown): val is OfferStatus =>
   typeof val === "string" && VALID_STATUSES.includes(val as OfferStatus);
 
-export const getAllOffersController = async (_req: Request, res: Response) => {
+export const getAllOffersController = async (req: Request, res: Response) => {
   try {
-    const offers = await findAllOffers();
+    const propertyId = req.query.propertyId as string | undefined;
+    const offers = await findAllOffers(propertyId);
     return res.status(200).json(offers);
   } catch (error: any) {
     console.error("Failed to fetch offers:", error);

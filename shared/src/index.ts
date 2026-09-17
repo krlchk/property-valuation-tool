@@ -131,6 +131,7 @@ export interface AIComponentEvaluation {
   confidence: number;
   reason: string;
   recommendedAction: string | null;
+  flaggedPhotoIds: string[] | null;
   photoIds: string[];
 }
 
@@ -239,4 +240,30 @@ export interface PaginatedResponse<T> {
     total: number,
     totalPages: number,
   }
+}
+
+export type PropertyAIReview = {
+  propertyId: string;
+  evaluations: EvaluatedComponentResult[];
+  totalAdjustmentPct: number;
+};
+
+export type StorePropertyAIReviewInput = {
+  estimatedPrice: number;
+  conditionAdjustmentPct: number;
+  offerTermPct: number;
+  finalEstimatedPrice: number;
+  reviewResponse: PropertyAIReview;
+};
+
+export interface PropertyReview {
+  id: number;
+  propertyId: string;
+  estimatedPrice: number;
+  conditionAdjustmentPct: number;
+  offerTermPct: number;
+  finalEstimatedPrice: number;
+  reviewResponse: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
 }

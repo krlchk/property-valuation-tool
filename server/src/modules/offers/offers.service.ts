@@ -1,11 +1,17 @@
 import { CreateOfferPayload, Offer, OfferStatusHistory, UpdateOfferPayload } from "@pvt/shared";
 import { supabase } from "../../lib/supabase";
 
-export const findAllOffers = async (): Promise<Offer[]> => {
-  const { data, error } = await supabase
+export const findAllOffers = async (propertyId?: string): Promise<Offer[]> => {
+  let query = supabase
     .from("offers")
     .select("*")
     .order("created_at", { ascending: false });
+
+  if (propertyId) {
+    query = query.eq("property_id", propertyId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return (data || []).map(mapOffer);
