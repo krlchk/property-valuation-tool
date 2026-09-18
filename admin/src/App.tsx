@@ -98,7 +98,7 @@ function App() {
                   syncWithLocation: true,
                   warnWhenUnsavedChanges: true,
                   title:{
-                    text:"Instantcashly Admin"
+                    text:"Instacashly Admin"
                   }
                 }}
               >
