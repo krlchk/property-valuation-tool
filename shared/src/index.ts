@@ -52,7 +52,7 @@ export interface UpdatePropertyRequest {
   squareFeet?: number | null;
 
   startingValue?: number | null;
-  
+
   offerTermsId?: number | null;
 
   userId?: string | null;
@@ -92,7 +92,7 @@ export interface EstimatePropertyRequest {
 }
 
 export interface EstimateResponse {
-  estimatedPrice: number;
+  finalEstimatedPrice: number;
 }
 
 // Offer Terms
@@ -133,6 +133,7 @@ export interface AIComponentEvaluation {
   recommendedAction: string | null;
   flaggedPhotoIds: string[] | null;
   photoIds: string[];
+  repairEstimate?: RepairEstimate | null;
 }
 
 export interface EvaluatedComponentResult extends AIComponentEvaluation {
@@ -192,7 +193,6 @@ export interface CreateUserPayload {
 
 export type UpdateUserPayload = Partial<CreateUserPayload>;
 
-
 export type OfferStatus = "accepted" | "proccessed" | "done";
 
 export interface Offer {
@@ -228,18 +228,18 @@ export interface UpdateOfferPayload {
 }
 
 export interface FetchAllResponse<T> {
-  data: T[],
-  total: number,
+  data: T[];
+  total: number;
 }
 
 export interface PaginatedResponse<T> {
   items: T[];
   pagination: {
-    page: number,
-    limit: number,
-    total: number,
-    totalPages: number,
-  }
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export type PropertyAIReview = {
@@ -249,21 +249,85 @@ export type PropertyAIReview = {
 };
 
 export type StorePropertyAIReviewInput = {
-  estimatedPrice: number;
   conditionAdjustmentPct: number;
-  offerTermPct: number;
-  finalEstimatedPrice: number;
   reviewResponse: PropertyAIReview;
 };
 
 export interface PropertyReview {
   id: number;
   propertyId: string;
-  estimatedPrice: number;
+  result: PropertyReviewResult;
   conditionAdjustmentPct: number;
-  offerTermPct: number;
-  finalEstimatedPrice: number;
   reviewResponse: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AiReview = Omit<AIComponentEvaluation, "component" | "photoIds">;
+
+export type PropertyPhotoReview = {
+  propertyId: string;
+  evaluations: EvaluatedComponentResult[];
+  totalAdjustmentPct: number;
+};
+
+export type PropertyReviewResult = "success" | "failed";
+
+export type StorePropertyReviewInput = {
+  propertyId: string;
+  result: PropertyReviewResult;
+  conditionAdjustmentPct: number;
+  reviewResponse: PropertyPhotoReview;
+};
+
+export type StoreComponentRepairEstimateInput = {
+  propertyId: string;
+  aiPropertyReviewId: number;
+  componentKey: PropertyComponentCategory;
+  grade: ComponentGradeType;
+  repairPrice: number | null;
+  reviewResponse: RepairEstimate;
+};
+
+export interface RepairEstimate {
+  title: string;
+  note: string;
+  noteTone: "warning" | null;
+  amount?: number; // Calculated via grade percentage lookup from starting property value
+}
+
+export type ReviewProcessResult =
+  | {
+      status: "SUCCESS";
+      propertyId: string;
+      reviewId: number;
+      totalAdjustmentPct: number;
+      evaluations: EvaluatedComponentResult[];
+    }
+  | {
+      status: "FAILED";
+      propertyId: string;
+      reason: string;
+      unresolvedComponents: Array<{
+        component: PropertyComponentCategory;
+        reason: string;
+        recommendedAction?: string | null;
+      }>;
+    };
+
+export interface PropertyRepairReview {
+  id: number;
+
+  propertyId: string;
+  aiPropertyReviewId: number;
+
+  componentKey: PropertyComponentCategory;
+  grade: ComponentGradeType;
+
+  estimatedRepairPrice: number;
+
+  reviewResponse: RepairEstimate;
+
   createdAt: string;
   updatedAt: string;
 }

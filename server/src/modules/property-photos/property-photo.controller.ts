@@ -23,13 +23,17 @@ const parsePhotoId = (req: Request) => {
   return id;
 };
 
-export const getPropertyPhotosController = async (req: Request, res: Response) => {
+export const getPropertyPhotosController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const rawPropertyId = req.params.propertyId;
     const propertyId = Array.isArray(rawPropertyId)
       ? rawPropertyId[0]
       : rawPropertyId;
-    if (!propertyId) return res.status(400).json({ error: "Property ID is required" });
+    if (!propertyId)
+      return res.status(400).json({ error: "Property ID is required" });
 
     return res.status(200).json(await getPropertyPhotos(propertyId));
   } catch (error) {
@@ -38,10 +42,14 @@ export const getPropertyPhotosController = async (req: Request, res: Response) =
   }
 };
 
-export const getPropertyPhotoByIdController = async (req: Request, res: Response) => {
+export const getPropertyPhotoByIdController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const id = parsePhotoId(req);
-    if (!id) return res.status(400).json({ error: "Valid photo ID is required" });
+    if (!id)
+      return res.status(400).json({ error: "Valid photo ID is required" });
 
     const photo = await getPropertyPhotoById(id);
     return photo
@@ -53,13 +61,19 @@ export const getPropertyPhotoByIdController = async (req: Request, res: Response
   }
 };
 
-export const createPropertyPhotoController = async (req: Request, res: Response) => {
+export const createPropertyPhotoController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
-    const propertyId = typeof req.body.propertyId === "string" ? req.body.propertyId : "";
+    const propertyId =
+      typeof req.body.propertyId === "string" ? req.body.propertyId : "";
     const category = req.body.category;
 
     if (!propertyId || !isCategory(category)) {
-      return res.status(400).json({ error: "propertyId and a valid category are required" });
+      return res
+        .status(400)
+        .json({ error: "propertyId and a valid category are required" });
     }
 
     if (!req.file) {
@@ -81,9 +95,14 @@ export const createPropertyPhotoController = async (req: Request, res: Response)
       return res.status(201).json(photo);
     } catch (error) {
       console.error("Failed to save property photo metadata:", error);
-      await deletePropertyPhotoObject(uploaded.storagePath).catch((cleanupError) => {
-        console.error("Failed to clean up uploaded property photo:", cleanupError);
-      });
+      await deletePropertyPhotoObject(uploaded.storagePath).catch(
+        (cleanupError) => {
+          console.error(
+            "Failed to clean up uploaded property photo:",
+            cleanupError,
+          );
+        },
+      );
       return res.status(500).json({ error: "Failed to save property photo" });
     }
   } catch (error) {
@@ -92,10 +111,14 @@ export const createPropertyPhotoController = async (req: Request, res: Response)
   }
 };
 
-export const updatePropertyPhotoController = async (req: Request, res: Response) => {
+export const updatePropertyPhotoController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const id = parsePhotoId(req);
-    if (!id) return res.status(400).json({ error: "Valid photo ID is required" });
+    if (!id)
+      return res.status(400).json({ error: "Valid photo ID is required" });
     if (!isCategory(req.body.category)) {
       return res.status(400).json({ error: "A valid category is required" });
     }
@@ -110,10 +133,14 @@ export const updatePropertyPhotoController = async (req: Request, res: Response)
   }
 };
 
-export const deletePropertyPhotoController = async (req: Request, res: Response) => {
+export const deletePropertyPhotoController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const id = parsePhotoId(req);
-    if (!id) return res.status(400).json({ error: "Valid photo ID is required" });
+    if (!id)
+      return res.status(400).json({ error: "Valid photo ID is required" });
 
     const deleted = await deletePropertyPhoto(id);
     return deleted

@@ -20,9 +20,7 @@ export const propertyService = {
     return request<PropertyResponse>(`/properties/${encodeURIComponent(id)}`);
   },
 
-  estimatePrice: (
-    input: EstimatePropertyRequest,
-  ): Promise<{ estimatedPrice: number }> => {
+  estimatePrice: (input: EstimatePropertyRequest) => {
     return request<EstimateResponse>(`/properties/estimate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

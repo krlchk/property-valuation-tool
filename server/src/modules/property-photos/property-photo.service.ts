@@ -1,9 +1,7 @@
-import type {
-  PropertyPhoto,
-  PropertyComponentCategory,
-} from "@pvt/shared";
+import type { PropertyPhoto, PropertyComponentCategory } from "@pvt/shared";
 import { supabase } from "../../lib/supabase";
 import { deletePropertyPhotoObject } from "../storage/s3.service";
+import { invalidateReview } from "../ai-review/ai-review.service";
 
 type PropertyPhotoRow = Record<string, unknown>;
 
@@ -51,6 +49,8 @@ export const createPropertyPhoto = async (input: {
     .single();
 
   if (error) throw error;
+
+  await invalidateReview(input.propertyId);
   return mapPropertyPhoto(data);
 };
 
@@ -72,7 +72,7 @@ export const updatePropertyPhoto = async (
 export const deletePropertyPhoto = async (id: number): Promise<boolean> => {
   const { data, error } = await supabase
     .from("property_photos")
-    .select("storage_path")
+    .select("storage_path, property_id")
     .eq("id", id)
     .maybeSingle();
 
@@ -87,6 +87,8 @@ export const deletePropertyPhoto = async (id: number): Promise<boolean> => {
     .eq("id", id);
 
   if (deleteError) throw deleteError;
+
+  await invalidateReview(String(data.property_id));
   return true;
 };
 
@@ -98,5 +100,5 @@ function mapPropertyPhoto(data: PropertyPhotoRow): PropertyPhoto {
     category: data.category as PropertyComponentCategory,
     createdAt: String(data.created_at),
     updatedAt: String(data.updated_at),
-  }
-};
+  };
+}

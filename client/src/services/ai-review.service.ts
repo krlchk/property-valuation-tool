@@ -1,14 +1,23 @@
-import type { PropertyAIReview, StorePropertyAIReviewInput } from "@pvt/shared";
+import type {
+  PropertyRepairReview,
+  PropertyReview,
+  ReviewProcessResult,
+} from "@pvt/shared";
 import { request } from "./api";
 
-const inFlightReviews = new Map<string, Promise<PropertyAIReview>>();
+const inFlightReviews = new Map<string, Promise<ReviewProcessResult>>();
 
 export const aiReviewService = {
-  reviewPropertyById: (propertyId: string): Promise<PropertyAIReview> => {
+  getPropertyReview: (propertyId: string): Promise<PropertyReview | null> =>
+    request<PropertyReview | null>(
+      `/ai-reviews/property/${encodeURIComponent(propertyId)}`,
+    ),
+
+  reviewPropertyById: (propertyId: string): Promise<ReviewProcessResult> => {
     const existingRequest = inFlightReviews.get(propertyId);
     if (existingRequest) return existingRequest;
 
-    const reviewRequest = request<PropertyAIReview>(
+    const reviewRequest = request<ReviewProcessResult>(
       `/ai-reviews/property/${encodeURIComponent(propertyId)}`,
       { method: "POST" },
     );
@@ -24,17 +33,10 @@ export const aiReviewService = {
     return reviewRequest;
   },
 
-  storePropertyReview: (
-    propertyId: string,
-    input: StorePropertyAIReviewInput,
-  ): Promise<void> => {
-    return request<void>(
-      `/ai-reviews/property/${encodeURIComponent(propertyId)}/store`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      },
-    );
-  },
+  getPropertyRepairReviews: (
+    aiPropertyReviewId: number,
+  ): Promise<PropertyRepairReview[]> =>
+    request<PropertyRepairReview[]>(
+      `/ai-reviews/${encodeURIComponent(String(aiPropertyReviewId))}/repairs`,
+    ),
 };

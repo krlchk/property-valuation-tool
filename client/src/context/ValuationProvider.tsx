@@ -1,4 +1,8 @@
-import { useCallback, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useState,
+  type ReactNode,
+} from "react";
 import { ValuationContext } from "./ValuationContext";
 import { EMPTY_CONTACT, type ContactInfo } from "../types/contact";
 import type { UploadedPhoto } from "../types/photo";
@@ -17,9 +21,20 @@ export const ValuationProvider = ({ children }: { children: ReactNode }) => {
     number | null
   >(null);
   const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
+  const [aiReviewId, setAiReviewId] = useState<number | null>(null);
+  const [aiReviewPhotoSignature, setAiReviewPhotoSignature] = useState<
+    string | null
+  >(null);
   const [contact, setContact] = useState<ContactInfo>(EMPTY_CONTACT);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const updatePhotos = useCallback((nextPhotos: UploadedPhoto[]) => {
+    setAiReviewId(null);
+    setAiReviewPhotoSignature(null);
+    setConditionAdjustmentPct(null);
+    setEstimatedPrice(null);
+    setPhotos(nextPhotos);
+  }, []);
 
   const fetchPropertyById = useCallback(async (id: string) => {
     setIsLoading(true);
@@ -50,6 +65,8 @@ export const ValuationProvider = ({ children }: { children: ReactNode }) => {
   const reset = () => {
     setProperty(null);
     setPhotos([]);
+    setAiReviewId(null);
+    setAiReviewPhotoSignature(null);
     setHydratedPropertyId(null);
     setSelectedTerm(null);
     setConditionAdjustmentPct(null);
@@ -63,7 +80,7 @@ export const ValuationProvider = ({ children }: { children: ReactNode }) => {
         property,
         setProperty,
         photos,
-        setPhotos,
+        setPhotos: updatePhotos,
         hydratedPropertyId,
         setHydratedPropertyId,
         selectedTerm,
@@ -72,6 +89,10 @@ export const ValuationProvider = ({ children }: { children: ReactNode }) => {
         setConditionAdjustmentPct,
         estimatedPrice,
         setEstimatedPrice,
+        aiReviewId,
+        setAiReviewId,
+        aiReviewPhotoSignature,
+        setAiReviewPhotoSignature,
         contact,
         setContact,
         fetchPropertyById,

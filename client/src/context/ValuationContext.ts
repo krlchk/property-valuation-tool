@@ -18,6 +18,10 @@ export type ValuationContextType = {
   setConditionAdjustmentPct: (value: number | null) => void;
   estimatedPrice: number | null;
   setEstimatedPrice: (value: number | null) => void;
+  aiReviewId: number | null;
+  setAiReviewId: (value: number | null) => void;
+  aiReviewPhotoSignature: string | null;
+  setAiReviewPhotoSignature: (value: string | null) => void;
   photos: UploadedPhoto[];
   setPhotos: (photos: UploadedPhoto[]) => void;
   hydratedPropertyId: string | null;

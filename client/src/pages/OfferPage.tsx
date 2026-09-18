@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { StepsWrapper } from "../components/StepsWrapper";
 import { LoadingSpinner } from "../components/Loading";
@@ -9,7 +9,7 @@ import { useValuation } from "../context/ValuationContext";
 import { aiReviewService } from "../services/ai-review.service";
 import { offersService } from "../services/offers.service";
 import { propertyService } from "../services/property.service";
-import type { OfferTerm, PropertyAIReview } from "@pvt/shared";
+import type { OfferTerm } from "@pvt/shared";
 import { STARTING_VALUE, formatCurrency } from "../utils/estimate";
 import { getOfferPriceRange } from "../utils/offerTerms";
 
@@ -58,23 +58,17 @@ export const OfferPage = () => {
     setConditionAdjustmentPct,
     estimatedPrice,
     setEstimatedPrice,
+    setAiReviewId,
   } = useValuation();
   const [isAssessing, setIsAssessing] = useState(false);
   const [assessmentError, setAssessmentError] = useState<string | null>(null);
   const [isAccepting, setIsAccepting] = useState(false);
   const [acceptError, setAcceptError] = useState<string | null>(null);
-  const assessmentKeyRef = useRef<string | null>(null);
-  const storedReviewKeyRef = useRef<string | null>(null);
-
   useRequireStep("offer");
 
   useEffect(() => {
     if (!property?.id || !selectedTerm) return;
     if (conditionAdjustmentPct !== null && estimatedPrice !== null) return;
-
-    const assessmentKey = `${property.id}:${selectedTerm.id}`;
-    if (assessmentKeyRef.current === assessmentKey) return;
-    assessmentKeyRef.current = assessmentKey;
 
     let isMounted = true;
 
@@ -84,14 +78,14 @@ export const OfferPage = () => {
 
       try {
         let adjustmentPct = conditionAdjustmentPct;
-        let review: PropertyAIReview | null = null;
-        let finalEstimatedPrice = estimatedPrice;
 
         if (adjustmentPct === null) {
-          review = await aiReviewService.reviewPropertyById(property.id);
+          const review = await aiReviewService.getPropertyReview(property.id);
           if (!isMounted) return;
+          if (!review) throw new Error("No successful AI review found.");
 
-          adjustmentPct = review.totalAdjustmentPct;
+          adjustmentPct = review.conditionAdjustmentPct;
+          setAiReviewId(review.id);
           setConditionAdjustmentPct(adjustmentPct);
         }
 
@@ -102,29 +96,7 @@ export const OfferPage = () => {
           });
           if (!isMounted) return;
 
-          finalEstimatedPrice = estimate.estimatedPrice;
-          setEstimatedPrice(finalEstimatedPrice);
-        }
-
-        if (
-          review &&
-          adjustmentPct !== null &&
-          finalEstimatedPrice !== null &&
-          storedReviewKeyRef.current !== assessmentKey
-        ) {
-          const conditionAmount = Math.round(
-            property.startingValue * (adjustmentPct / 100),
-          );
-          const estimatedValue = property.startingValue + conditionAmount;
-
-          await aiReviewService.storePropertyReview(property.id, {
-            estimatedPrice: estimatedValue,
-            conditionAdjustmentPct: adjustmentPct,
-            offerTermPct: Math.round((selectedTerm.priceMultiplier - 1) * 100),
-            finalEstimatedPrice,
-            reviewResponse: review,
-          });
-          storedReviewKeyRef.current = assessmentKey;
+          setEstimatedPrice(estimate.finalEstimatedPrice);
         }
       } catch (requestError: unknown) {
         if (!isMounted) return;
@@ -150,6 +122,7 @@ export const OfferPage = () => {
     estimatedPrice,
     property?.id,
     selectedTerm,
+    setAiReviewId,
     setConditionAdjustmentPct,
     setEstimatedPrice,
     property?.startingValue,
@@ -218,7 +191,10 @@ export const OfferPage = () => {
 
   const content = getOfferContent(selectedTerm);
 
-  const { low, high } = getOfferPriceRange(1, estimatedPrice);
+  const { low, high } = getOfferPriceRange(
+    selectedTerm.priceMultiplier,
+    estimatedPrice,
+  );
 
   const timelineAdjustmentAmount = Math.round(
     estimatedValue * (selectedTerm.priceMultiplier - 1),

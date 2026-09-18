@@ -67,7 +67,7 @@ export const OfferHeldPage = () => {
 
       try {
         setIsEstimating(true);
-        const { estimatedPrice: totalPrice } =
+        const { finalEstimatedPrice: totalPrice } =
           await propertyService.estimatePrice({
             propId: property.id,
             conditionAdjustmentPct: conditionAdjustmentPct ?? 0,

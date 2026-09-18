@@ -1,10 +1,12 @@
 import type { Request, Response } from "express";
 import {
   reviewPropertyPhoto,
-  reviewPropertyPhotos,
   storePropertyReview,
-  getPropertyReviews,
+  getPropertyReview,
+  getPropertyRepairReviews,
+  requestPropertyReview,
 } from "./ai-review.service";
+import { PropertyReviewResult } from "@pvt/shared";
 
 const parsePositiveInteger = (value: string | string[] | undefined) => {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -12,9 +14,13 @@ const parsePositiveInteger = (value: string | string[] | undefined) => {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
-export const reviewPropertyPhotoController = async (req: Request, res: Response) => {
+export const reviewPropertyPhotoController = async (
+  req: Request,
+  res: Response,
+) => {
   const photoId = parsePositiveInteger(req.params.photoId);
-  if (!photoId) return res.status(400).json({ error: "Valid photo ID is required" });
+  if (!photoId)
+    return res.status(400).json({ error: "Valid photo ID is required" });
 
   try {
     return res.status(200).json(await reviewPropertyPhoto(photoId));
@@ -24,74 +30,111 @@ export const reviewPropertyPhotoController = async (req: Request, res: Response)
   }
 };
 
-export const reviewPropertyPhotosController = async (req: Request, res: Response) => {
+export const reviewPropertyPhotosController = async (
+  req: Request,
+  res: Response,
+) => {
   const rawPropertyId = req.params.propertyId;
   const propertyId = Array.isArray(rawPropertyId)
     ? rawPropertyId[0]
     : rawPropertyId;
 
-  if (!propertyId) return res.status(400).json({ error: "Property ID is required" });
+  if (!propertyId)
+    return res.status(400).json({ error: "Property ID is required" });
 
   try {
-    return res.status(200).json(await reviewPropertyPhotos(propertyId));
+    return res.status(200).json(await requestPropertyReview(propertyId));
   } catch (error) {
     console.error("Failed to review property photos:", error);
     return res.status(500).json({ error: "Failed to review property photos" });
   }
 };
 
-export const getPropertyReviewsController = async (req: Request, res: Response) => {
+export const getPropertyReviewController = async (
+  req: Request,
+  res: Response,
+) => {
   const rawPropertyId = req.params.propertyId;
-  const propertyId = Array.isArray(rawPropertyId) ? rawPropertyId[0] : rawPropertyId;
+  const propertyId = Array.isArray(rawPropertyId)
+    ? rawPropertyId[0]
+    : rawPropertyId;
 
-  if (!propertyId) return res.status(400).json({ error: "Property ID is required" });
+  if (!propertyId)
+    return res.status(400).json({ error: "Property ID is required" });
 
   try {
-    return res.status(200).json(await getPropertyReviews(propertyId));
+    return res.status(200).json(await getPropertyReview(propertyId));
   } catch (error) {
     console.error("Failed to fetch property AI reviews:", error);
-    return res.status(500).json({ error: "Failed to fetch property AI reviews" });
+    return res
+      .status(500)
+      .json({ error: "Failed to fetch property AI reviews" });
   }
 };
 
-export const storePropertyReviewController = async (req: Request, res: Response) => {
+export const getPropertyRepairReviewsController = async (
+  req: Request,
+  res: Response,
+) => {
+  const rawReviewId = req.params.aiPropertyReviewId;
+  const reviewId = parsePositiveInteger(rawReviewId);
+
+  if (!reviewId)
+    return res
+      .status(400)
+      .json({ error: "Valid AI property review ID is required" });
+
+  try {
+    return res.status(200).json(await getPropertyRepairReviews(reviewId));
+  } catch (error) {
+    console.error("Failed to fetch property repair reviews:", error);
+    return res
+      .status(500)
+      .json({ error: "Failed to fetch property repair reviews" });
+  }
+};
+
+export const storePropertyReviewController = async (
+  req: Request,
+  res: Response,
+) => {
   const rawPropertyId = req.params.propertyId;
-  const propertyId = Array.isArray(rawPropertyId) ? rawPropertyId[0] : rawPropertyId;
-  const {
-    estimatedPrice,
-    conditionAdjustmentPct,
-    offerTermPct,
-    finalEstimatedPrice,
-    reviewResponse,
-  } = req.body;
+  const propertyId = Array.isArray(rawPropertyId)
+    ? rawPropertyId[0]
+    : rawPropertyId;
+  const { conditionAdjustmentPct, reviewResult, reviewResponse } = req.body;
 
-  if (!propertyId) return res.status(400).json({ error: "Property ID is required" });
+  if (!propertyId)
+    return res.status(400).json({ error: "Property ID is required" });
 
-  const values = [
-    estimatedPrice,
-    conditionAdjustmentPct,
-    offerTermPct,
-    finalEstimatedPrice,
-  ];
-  if (values.some((value) => typeof value !== "number" || !Number.isFinite(value))) {
-    return res.status(400).json({ error: "Review pricing values must be finite numbers" });
+  if (reviewResult !== "failed" && reviewResult !== "success") {
+    throw new Error("Invalid review result");
+  }
+
+  if (
+    typeof conditionAdjustmentPct !== "number" ||
+    !Number.isFinite(conditionAdjustmentPct)
+  ) {
+    return res
+      .status(400)
+      .json({ error: "Review pricing values must be finite numbers" });
   }
   if (!reviewResponse || typeof reviewResponse !== "object") {
     return res.status(400).json({ error: "Review response is required" });
   }
 
   try {
-    const result = await storePropertyReview({
+    const storeResult = await storePropertyReview({
       propertyId,
-      estimatedPrice,
       conditionAdjustmentPct,
-      offerTermPct,
-      finalEstimatedPrice,
+      result: reviewResult as PropertyReviewResult,
       reviewResponse,
     });
-    return res.status(201).json(result);
+    return res.status(201).json(storeResult);
   } catch (error) {
     console.error("Failed to store property AI review:", error);
-    return res.status(500).json({ error: "Failed to store property AI review" });
+    return res
+      .status(500)
+      .json({ error: "Failed to store property AI review" });
   }
 };
