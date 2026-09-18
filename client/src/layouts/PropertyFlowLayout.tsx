@@ -6,6 +6,7 @@ import { useValuation } from "../context/ValuationContext";
 import { offerTermsService } from "../services/offer-terms.service";
 import { propertyPhotosService } from "../services/property-photos.service";
 import { propertyService } from "../services/property.service";
+import { aiReviewService } from "../services/ai-review.service";
 import { StepsWrapper } from "../components/StepsWrapper";
 
 export const PropertyFlowLayout = () => {
@@ -17,6 +18,8 @@ export const PropertyFlowLayout = () => {
     setProperty,
     setPhotos,
     setSelectedTerm,
+    setAiReviewId,
+    setConditionAdjustmentPct,
   } = useValuation();
   const [errorAddressId, setErrorAddressId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -28,9 +31,10 @@ export const PropertyFlowLayout = () => {
 
     const hydrate = async () => {
       try {
-        const [property, photos] = await Promise.all([
+        const [property, photos, review] = await Promise.all([
           propertyService.getById(addressId),
           propertyPhotosService.getByPropertyId(addressId, controller.signal),
+          aiReviewService.getPropertyReview(addressId),
         ]);
 
         let selectedTerm = null;
@@ -42,6 +46,8 @@ export const PropertyFlowLayout = () => {
 
         setProperty(property);
         setPhotos(photos);
+        setAiReviewId(review?.id ?? null);
+        setConditionAdjustmentPct(review?.conditionAdjustmentPct ?? null);
         setSelectedTerm(selectedTerm);
         setLoadError(null);
         setErrorAddressId(null);
@@ -67,6 +73,8 @@ export const PropertyFlowLayout = () => {
     setPhotos,
     setProperty,
     setSelectedTerm,
+    setAiReviewId,
+    setConditionAdjustmentPct,
   ]);
 
   if (!addressId) {

@@ -26,6 +26,7 @@ import {
   OPENAI_API_URL,
   OPENAI_MODEL,
 } from "../../utils/ai-review.constants";
+import { reverse } from "dns";
 
 //Persist reviews
 export const storePropertyReview = async (input: StorePropertyReviewInput) => {
@@ -507,6 +508,28 @@ const requestAiReview = async (
     flaggedPhotoIds: [],
     repairEstimate,
   };
+};
+
+export const invalidateReview = async (propertyId: string) => {
+  const review = await getPropertyReview(propertyId);
+
+  if (!review) {
+    return;
+  }
+
+  const { error: repairDeleteError } = await supabase
+    .from("property_repair_reviews")
+    .delete()
+    .eq("ai_property_review_id", [review.id]);
+
+  if (repairDeleteError) throw repairDeleteError;
+
+  const { error: reviewDeleteError } = await supabase
+    .from("ai_property_reviews")
+    .delete()
+    .eq("id", [review.id]);
+
+  if (reviewDeleteError) throw reviewDeleteError;
 };
 
 const unknownEvaluation = (
