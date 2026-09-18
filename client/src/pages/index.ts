@@ -6,3 +6,4 @@ export { AnalyzingPage } from "./AnalyzingPage";
 export { OfferPage } from "./OfferPage";
 export { RepairBreakdownPage } from "./RepairBreakdownPage";
 export { OfferHeldPage } from "./OfferHeldPage";
+export { NotFoundPage } from "./NotFoundPage";

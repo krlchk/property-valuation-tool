@@ -8,6 +8,7 @@ import {
   PropertyPhotosPage,
   RepairBreakdownPage,
   TimelinePage,
+  NotFoundPage,
 } from "./pages";
 import { PropertyFlowLayout } from "./layouts/PropertyFlowLayout";
 
@@ -23,6 +24,7 @@ const App = () => (
       <Route element={<RepairBreakdownPage />} path="offer/breakdown" />
       <Route element={<OfferHeldPage />} path="offer/held" />
     </Route>
+    <Route path="*" element={<NotFoundPage />} />
   </Routes>
 );
 
