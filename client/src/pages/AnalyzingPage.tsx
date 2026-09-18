@@ -8,6 +8,7 @@ import { useValuation } from "../context/ValuationContext";
 import { useRequireStep } from "../hooks/useRequireStep";
 import { aiReviewService } from "../services/ai-review.service";
 import { propertyService } from "../services/property.service";
+import type { EvaluatedComponentResult, PropertyReview } from "@pvt/shared";
 
 const STEPS = [
   "Every photo read",
@@ -29,6 +30,23 @@ const formatComponentName = (component: string) =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
+const getPhotoSignature = (photos: { id: string; contentHash?: string }[]) =>
+  photos
+    .map((photo) => `${photo.id}:${photo.contentHash ?? ""}`)
+    .sort()
+    .join("|");
+
+const getReviewEvaluations = (
+  review: PropertyReview,
+): EvaluatedComponentResult[] => {
+  const response = review.reviewResponse as {
+    evaluations?: EvaluatedComponentResult[];
+  };
+  return Array.isArray(review.reviewResponse)
+    ? (review.reviewResponse as unknown as EvaluatedComponentResult[])
+    : (response.evaluations ?? []);
+};
+
 export const AnalyzingPage = () => {
   const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
@@ -39,6 +57,8 @@ export const AnalyzingPage = () => {
     selectedTerm,
     setConditionAdjustmentPct,
     setEstimatedPrice,
+    setAiReviewId,
+    setAiReviewPhotoSignature,
   } = useValuation();
 
   useRequireStep("offer");
@@ -46,6 +66,7 @@ export const AnalyzingPage = () => {
   const [elapsedMs, setElapsedMs] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const photoSignature = getPhotoSignature(photos);
 
   useEffect(() => {
     if (!property?.id || !addressId) return;
@@ -59,35 +80,55 @@ export const AnalyzingPage = () => {
     const runAssessment = async () => {
       setError(null);
       setCompletedSteps(0);
-      setConditionAdjustmentPct(null);
       setEstimatedPrice(null);
 
       try {
-        const review = await aiReviewService.reviewPropertyById(property.id);
+        const storedReview = await aiReviewService.getPropertyReview(
+          property.id,
+        );
+        let reviewId = storedReview?.id ?? null;
+        let adjustmentPct: number;
+        let evaluations: EvaluatedComponentResult[];
+
+        if (storedReview) {
+          adjustmentPct = storedReview.conditionAdjustmentPct;
+          evaluations = getReviewEvaluations(storedReview);
+        } else {
+          const reviewResult = await aiReviewService.reviewPropertyById(
+            property.id,
+          );
+          if (reviewResult.status !== "SUCCESS") {
+            const componentMessages = reviewResult.unresolvedComponents
+              .map(
+                ({ component, reason }) =>
+                  `- ${formatComponentName(component)}: ${reason}`,
+              )
+              .join("\n");
+            setError(
+              `${componentMessages}\n\nPlease remove or replace them before continuing.`,
+            );
+            return;
+          }
+
+          adjustmentPct = reviewResult.totalAdjustmentPct;
+          evaluations = reviewResult.evaluations;
+          reviewId = reviewResult.reviewId;
+        }
+
         if (!isMounted) return;
 
-        setConditionAdjustmentPct(review.totalAdjustmentPct);
+        setConditionAdjustmentPct(adjustmentPct);
+        setAiReviewId(reviewId);
+        setAiReviewPhotoSignature(photoSignature);
         setCompletedSteps(2);
 
         const estimate = await propertyService.estimatePrice({
           propId: property.id,
-          conditionAdjustmentPct: review.totalAdjustmentPct,
+          conditionAdjustmentPct: adjustmentPct,
         });
         if (!isMounted) return;
 
-        await aiReviewService.storePropertyReview(property.id, {
-          estimatedPrice: estimate.estimatedPrice,
-          conditionAdjustmentPct: review.totalAdjustmentPct,
-          offerTermPct: selectedTerm
-            ? Math.round((selectedTerm.priceMultiplier - 1) * 100)
-            : 0,
-          finalEstimatedPrice: selectedTerm
-            ? estimate.estimatedPrice * selectedTerm.priceMultiplier
-            : estimate.estimatedPrice,
-          reviewResponse: review,
-        });
-
-        const unknownEvaluations = review.evaluations
+        const unknownEvaluations = evaluations
           .filter((evaluation) => evaluation.grade === "UNKNOWN")
           .map((evaluation) => ({
             component: formatComponentName(evaluation.component),
@@ -104,7 +145,7 @@ export const AnalyzingPage = () => {
           return;
         }
 
-        setEstimatedPrice(estimate.estimatedPrice);
+        setEstimatedPrice(estimate.finalEstimatedPrice);
         setCompletedSteps(STEPS.length);
         setElapsedMs(performance.now() - startedAt);
         navigate(`/addresses/${addressId}/offer`);
@@ -130,9 +171,12 @@ export const AnalyzingPage = () => {
     addressId,
     navigate,
     property?.id,
+    photoSignature,
     selectedTerm,
     setConditionAdjustmentPct,
     setEstimatedPrice,
+    setAiReviewId,
+    setAiReviewPhotoSignature,
   ]);
 
   if (error) {

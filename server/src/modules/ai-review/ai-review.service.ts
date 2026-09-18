@@ -1,11 +1,18 @@
 import type {
-  AIComponentEvaluation,
+  AiReview,
   ComponentEvaluationGrade,
   ComponentGradeType,
   EvaluatedComponentResult,
   PropertyComponentCategory,
   PropertyPhoto,
+  PropertyPhotoReview,
+  PropertyRepairReview,
   PropertyReview,
+  PropertyReviewResult,
+  RepairEstimate,
+  ReviewProcessResult,
+  StoreComponentRepairEstimateInput,
+  StorePropertyReviewInput,
 } from "@pvt/shared";
 import { PROPERTY_COMPONENT_CATEGORIES } from "../../utils/component-categories";
 import { getComponentGradeByKeyAndGrade } from "../components-grade/components-grade.service";
@@ -14,104 +21,239 @@ import {
   getPropertyPhotos,
 } from "../property-photos/property-photo.service";
 import { supabase } from "../../lib/supabase";
+import {
+  INSPECTOR_SYSTEM_PROMPT,
+  OPENAI_API_URL,
+  OPENAI_MODEL,
+} from "../../utils/ai-review.constants";
 
-const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
-const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-
-// const INSPECTOR_SYSTEM_PROMPT = `You are an expert residential real estate property condition inspector. Your job is to analyze photos of a house component and evaluate its visible physical condition.
-
-// CRITICAL STEP 1 - IMAGE RELEVANCE & CONTENT VALIDATION:
-// Before evaluating condition, inspect every image to verify if it depicts a real, real-estate photo of the target component.
-// - If the photo contains non-real-estate content (e.g., cartoons, illustrations, memes, pets, people, generic objects, indoor scenes when inspecting exterior roofs/landscaping), you MUST set grade to "UNKNOWN".
-// - Do NOT guess, hallucinate, or default to "FAIR" or "GOOD" for irrelevant or unidentifiable images.
-
-// CRITICAL STEP 2 - GRADING CRITERIA (Only apply if photos depict the valid target component):
-// - GOOD: Modern or updated appearance, well-maintained, minimal to no visible wear, no damage.
-// - FAIR: Functional and usable, but dated appearance, showing moderate wear or minor cosmetic updates needed.
-// - BAD: Heavily outdated, deteriorated, damaged, missing parts, or visibly in need of significant renovation.
-// - UNKNOWN: The photo provided is non-real-estate content, irrelevant to the target component, blurry, obstructed, or lacks sufficient visibility to evaluate.
-
-
-// Rules:
-// 1. Grade ONLY visible physical condition. Never invent hidden defects (e.g., do not claim a roof leaks unless water damage or missing shingles are visibly apparent).
-// 2. If grade is UNKNOWN because photos are irrelevant or non-real-estate images, set recommended_action to: "Uploaded photos appear irrelevant or do not show {{component}}. Please upload actual photos of the {{component}}."
-// 3. If grade is UNKNOWN due to quality/lighting, set recommended_action to: "Upload higher quality or clearer photos for {{component}}."
-// 4. If grade is GOOD, FAIR, or BAD, set recommended_action to null.
-// 5. Confidence must be a float between 0.00 and 1.00 representing your certainty. UNKNOWN confidence must be between 0.00 and 0.30. Set confidence between 0.00 and 0.10 for irrelevant/non-real-estate images.
-// 6. Provide a concise, clear reason in 1-2 sentences.
-// 7. Return only the requested JSON object.`;
-
-const INSPECTOR_SYSTEM_PROMPT = `You are an expert residential real estate property condition inspector. Your job is to analyze photos of a house component and evaluate its visible physical condition.
-
-CRITICAL STEP 1 - IMAGE RELEVANCE & CONTENT VALIDATION:
-Inspect EVERY provided image in the batch before evaluating condition. ALL images must depict real, real-estate photos of {{component}}.
-- If ANY photo in the batch contains non-real-estate content (e.g., cartoons, illustrations, memes, pets, people, generic objects, or unrelated house parts when inspecting {{component}}), you MUST set grade to "UNKNOWN".
-- Do NOT skip checking subsequent images if the first image appears valid. A single invalid image invalidates the entire evaluation.
-- Do NOT guess, hallucinate, or default to "FAIR" or "GOOD" for irrelevant or unidentifiable images.
-
-CRITICAL STEP 2 - GRADING CRITERIA (Only apply if ALL photos depict valid {{component}}):
-- GOOD: Modern or updated appearance, well-maintained, minimal to no visible wear, no damage.
-- FAIR: Functional and usable, but dated appearance, showing moderate wear or minor cosmetic updates needed.
-- BAD: Heavily outdated, deteriorated, damaged, missing parts, or visibly in need of significant renovation.
-- UNKNOWN: Any photo provided is non-real-estate content, irrelevant to {{component}}, blurry, obstructed, or lacks sufficient visibility to evaluate.
-
-
-Rules:
-1. Grade ONLY visible physical condition. Never invent hidden defects (e.g., do not claim a roof leaks unless water damage or missing shingles are visibly apparent).
-2. If grade is UNKNOWN because any photo is irrelevant or a non-real-estate image, set recommended_action to: "Uploaded photos appear irrelevant or do not show {{component}}. Please upload actual photos of the {{component}}."
-3. If grade is UNKNOWN due to quality/lighting, set recommended_action to: "Upload higher quality or clearer photos for {{component}}."
-4. If grade is GOOD, FAIR, or BAD, set recommended_action to null.
-5. Confidence must be a float between 0.00 and 1.00 representing your certainty. UNKNOWN confidence must be between 0.00 and 0.30. Set confidence between 0.00 and 0.10 for irrelevant/non-real-estate images.
-6. Provide a concise, clear reason in 1-2 sentences.
-7. Return an array of string IDs under "flagged_photo_ids" containing the exact IDs of any photos that are irrelevant, non-real-estate, blurry, or invalid. If all photos are valid, set "flagged_photo_ids" to an empty array [].
-8. Return only the requested JSON object.`;
-
-type AiReview = Omit<AIComponentEvaluation, "component" | "photoIds" >;
-
-export type PropertyPhotoReview = {
-  propertyId: string;
-  evaluations: EvaluatedComponentResult[];
-  totalAdjustmentPct: number;
-};
-
-export type StorePropertyReviewInput = {
-  propertyId: string;
-  estimatedPrice: number;
-  conditionAdjustmentPct: number;
-  offerTermPct: number;
-  finalEstimatedPrice: number;
-  reviewResponse: PropertyPhotoReview;
-};
-
-export const storePropertyReview = async (
-  input: StorePropertyReviewInput,
-) => {
+//Persist reviews
+export const storePropertyReview = async (input: StorePropertyReviewInput) => {
   const { data, error } = await supabase
     .from("ai_property_reviews")
     .insert({
       property_id: input.propertyId,
-      estimated_price: input.estimatedPrice,
+      result: input.result,
       condition_adjustment_pct: input.conditionAdjustmentPct,
-      offer_term_pct: input.offerTermPct,
-      final_estimated_price: input.finalEstimatedPrice,
       review_response: input.reviewResponse,
     })
     .select()
     .single();
 
   if (error) throw error;
+
+  return mapPropertyAiReview(data);
+};
+
+export const saveComponentRepairReview = async (
+  input: StoreComponentRepairEstimateInput,
+) => {
+  const { data, error } = await supabase
+    .from("property_repair_reviews")
+    .upsert(
+      {
+        property_id: input.propertyId,
+        ai_property_review_id: input.aiPropertyReviewId,
+        component_key: input.componentKey,
+        grade: input.grade,
+        estimated_repair_price: input.repairPrice ?? 0.0,
+        review_response: input.reviewResponse,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "ai_property_review_id, component_key" },
+    )
+    .select("*")
+    .single();
+
+  if (error) throw error;
   return data;
 };
 
-export const getPropertyReviews = async (propertyId: string): Promise<PropertyReview[]> => {
+export const saveBatchComponentRepairReviews = async (
+  inputs: StoreComponentRepairEstimateInput[],
+) => {
+  if (!inputs.length) return [];
+
+  const rows = inputs.map((input) => ({
+    property_id: input.propertyId,
+    ai_property_review_id: input.aiPropertyReviewId,
+    component_key: input.componentKey,
+    grade: input.grade,
+    estimated_repair_price: input.repairPrice ?? null,
+    review_response: input.reviewResponse,
+    updated_at: new Date().toISOString(),
+  }));
+
+  const { data, error } = await supabase
+    .from("property_repair_reviews")
+    .upsert(rows, { onConflict: "ai_property_review_id, component_key" })
+    .select("*");
+
+  if (error) throw error;
+  return data;
+};
+
+// export const getPropertyReviews = async (
+//   propertyId: string,
+// ): Promise<PropertyReview[]> => {
+//   const { data, error } = await supabase
+//     .from("ai_property_reviews")
+//     .select("*")
+//     .eq("property_id", propertyId)
+//     .order("created_at", { ascending: false });
+
+//   if (error) throw error;
+//   return (data || []).map(mapPropertyAiReview);
+// };
+
+export const getPropertyReview = async (
+  propertyId: string,
+): Promise<PropertyReview | null> => {
   const { data, error } = await supabase
     .from("ai_property_reviews")
     .select("*")
     .eq("property_id", propertyId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data || data.result !== "success") return null;
+
+  return mapPropertyAiReview(data);
+};
+
+export const getPropertyRepairReviews = async (aiPropertyReviewId: number) => {
+  const { data, error } = await supabase
+    .from("property_repair_reviews")
+    .select("*")
+    .eq("ai_property_review_id", aiPropertyReviewId)
+    .order("created_at", { ascending: true });
 
   if (error) throw error;
-  return (data || []).map(mapPropertyAiReview);
+  return (data || []).map(mapToPropertyRepairReview);
+};
+
+export const requestPropertyReview = async (
+  propertyId: string,
+): Promise<ReviewProcessResult> => {
+  const photos = await getPropertyPhotos(propertyId);
+  const photosByCategory = groupPhotosByCategory(photos);
+
+  // Evaluate all component categories concurrently
+  const evaluations = await Promise.all(
+    PROPERTY_COMPONENT_CATEGORIES.map(async (component) => {
+      const categoryPhotos = photosByCategory.get(component) ?? [];
+      return evaluateCategory(component, categoryPhotos);
+    }),
+  );
+
+  // Filter for UNKNOWN or unresolvable components
+  const failedComponents = evaluations.filter((e) => e.grade === "UNKNOWN");
+
+  if (failedComponents.length > 0) {
+    await storePropertyReview({
+      propertyId,
+      result: "failed",
+      conditionAdjustmentPct: 0,
+      reviewResponse: {
+        propertyId,
+        evaluations,
+        totalAdjustmentPct: 0,
+      },
+    });
+
+    return {
+      status: "FAILED",
+      propertyId,
+      reason: "One or more components could not be evaluated.",
+      unresolvedComponents: failedComponents.map((f) => ({
+        component: f.component,
+        reason: f.reason,
+        recommendedAction: f.recommendedAction,
+      })),
+    };
+  }
+
+  // Calculate total condition adjustment % from DB rules
+  let totalAdjustmentPct = 0;
+  for (const evaluation of evaluations) {
+    const gradePct = await getGradePercentage(
+      evaluation.component,
+      evaluation.grade,
+    );
+    evaluation.gradePercentage = gradePct;
+    totalAdjustmentPct += gradePct;
+  }
+
+  // 1. Update the latest successful review, or insert one when none exists.
+  // Failed reviews are intentionally never reused and are always inserted.
+  const { data: existingReview, error: existingReviewError } = await supabase
+    .from("ai_property_reviews")
+    .select("id")
+    .eq("property_id", propertyId)
+    .eq("result", "success")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingReviewError) throw existingReviewError;
+
+  const reviewValues = {
+    property_id: propertyId,
+    result: "success",
+    condition_adjustment_pct: totalAdjustmentPct,
+    review_response: evaluations,
+    updated_at: new Date().toISOString(),
+  };
+
+  const reviewQuery = existingReview
+    ? supabase
+        .from("ai_property_reviews")
+        .update(reviewValues)
+        .eq("id", existingReview.id)
+    : supabase.from("ai_property_reviews").insert(reviewValues);
+
+  const { data: storedReview, error: reviewError } = await reviewQuery
+    .select()
+    .single();
+
+  if (reviewError) throw reviewError;
+
+  // 2. Insert/upsert repair estimates with amount set to null
+  const repairInputs = evaluations
+    .filter(
+      (evaluation) =>
+        isScoredGrade(evaluation.grade) && evaluation.repairEstimate != null,
+    )
+    .map((evaluation) => ({
+      property_id: propertyId,
+      ai_property_review_id: storedReview.id,
+      component_key: evaluation.component,
+      grade: evaluation.grade,
+      estimated_repair_price: null,
+      review_response: evaluation.repairEstimate,
+      updated_at: new Date().toISOString(),
+    }));
+
+  const { error: repairError } = await supabase
+    .from("property_repair_reviews")
+    .upsert(repairInputs, {
+      onConflict: "ai_property_review_id, component_key",
+    });
+
+  if (repairError) throw repairError;
+
+  return {
+    status: "SUCCESS",
+    propertyId,
+    reviewId: storedReview.id,
+    totalAdjustmentPct,
+    evaluations,
+  };
 };
 
 /** Reviews every configured component category for a property. */
@@ -224,7 +366,10 @@ const requestAiReview = async (
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("Missing OPENAI_API_KEY environment variable");
 
-  const systemPrompt = INSPECTOR_SYSTEM_PROMPT.replaceAll("{{component}}", component);
+  const systemPrompt = INSPECTOR_SYSTEM_PROMPT.replaceAll(
+    "{{component}}",
+    component,
+  );
 
   const response = await fetch(OPENAI_API_URL, {
     method: "POST",
@@ -268,9 +413,23 @@ const requestAiReview = async (
               reason: { type: "string" },
               recommended_action: { type: ["string", "null"] },
               flagged_photo_ids: {
-                "type": "array",
-                "items": { "type": "string" }
-              }
+                type: "array",
+                items: { type: "string" },
+              },
+              repair_estimate: {
+                type: ["object", "null"],
+                additionalProperties: false,
+                properties: {
+                  title: { type: "string" },
+                  repair_score: { type: "number", minimum: 0, maximum: 1 },
+                  note: { type: "string" },
+                  note_tone: {
+                    type: ["string", "null"],
+                    enum: ["warning", null],
+                  },
+                },
+                required: ["title", "repair_score", "note", "note_tone"],
+              },
             },
             required: [
               "grade",
@@ -278,6 +437,7 @@ const requestAiReview = async (
               "reason",
               "recommended_action",
               "flagged_photo_ids",
+              "repair_estimate",
             ],
           },
         },
@@ -295,7 +455,7 @@ const requestAiReview = async (
   };
 
   const content = data.choices?.[0]?.message?.content;
-  
+
   if (!content) throw new Error("OpenAI returned an empty review");
 
   const parsed = JSON.parse(content) as {
@@ -304,7 +464,20 @@ const requestAiReview = async (
     reason?: string;
     recommended_action?: string | null;
     flagged_photo_ids?: string[];
+    repair_estimate:
+      | (Omit<RepairEstimate, "noteTone"> & { note_tone: "warning" | null })
+      | null;
   };
+
+  const parsedRepair = parsed.repair_estimate;
+  const repairEstimate: RepairEstimate | null =
+    parsed.grade === "UNKNOWN" || !parsedRepair
+      ? null
+      : {
+          title: parsedRepair.title,
+          note: parsedRepair.note,
+          noteTone: parsedRepair.note_tone === "warning" ? "warning" : null,
+        };
 
   if (
     !isEvaluationGrade(parsed.grade) ||
@@ -332,6 +505,7 @@ const requestAiReview = async (
     reason: parsed.reason,
     recommendedAction: null,
     flaggedPhotoIds: [],
+    repairEstimate,
   };
 };
 
@@ -356,22 +530,39 @@ const isScoredGrade = (
 ): value is ComponentGradeType =>
   value === "GOOD" || value === "FAIR" || value === "BAD";
 
-const isEvaluationGrade = (
-  value: unknown,
-): value is ComponentEvaluationGrade =>
+const isEvaluationGrade = (value: unknown): value is ComponentEvaluationGrade =>
   value === "GOOD" ||
   value === "FAIR" ||
   value === "BAD" ||
   value === "UNKNOWN";
 
+function mapToPropertyRepairReview(
+  data: Record<string, any>,
+): PropertyRepairReview {
+  return {
+    id: data.id,
+
+    propertyId: data.property_id,
+    aiPropertyReviewId: data.ai_property_review_id,
+
+    componentKey: data.component_key,
+    grade: data.grade,
+
+    estimatedRepairPrice: data.estimated_repair_price ?? 0,
+
+    reviewResponse: data.review_response,
+
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
+}
+
 function mapPropertyAiReview(data: Record<string, any>): PropertyReview {
   return {
     id: Number(data.id),
     propertyId: data.property_id,
-    estimatedPrice: Number(data.estimated_price),
     conditionAdjustmentPct: Number(data.condition_adjustment_pct),
-    offerTermPct: Number(data.offer_term_pct),
-    finalEstimatedPrice: Number(data.final_estimated_price),
+    result: data.result as PropertyReviewResult,
     reviewResponse: data.review_response ?? {},
     createdAt: data.created_at,
     updatedAt: data.updated_at,

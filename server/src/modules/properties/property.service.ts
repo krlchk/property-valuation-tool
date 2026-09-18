@@ -1,6 +1,18 @@
-import { CreatePropertyRequest, UpdatePropertyRequest, PropertyResponse, FetchAllResponse } from "@pvt/shared";
+import {
+  CreatePropertyRequest,
+  UpdatePropertyRequest,
+  PropertyResponse,
+  FetchAllResponse,
+  StoreComponentRepairEstimateInput,
+} from "@pvt/shared";
 import { supabase } from "../../lib/supabase";
 import { findUserById } from "../users/users.service";
+import {
+  getPropertyRepairReviews,
+  getPropertyReview,
+  saveBatchComponentRepairReviews,
+} from "../ai-review/ai-review.service";
+import { getComponentGradeByKeyAndGrade } from "../components-grade/components-grade.service";
 
 export const getAllProperties = async (
   page: number,
@@ -73,6 +85,52 @@ export const createProperty = async (
   return mapToPropertyResponse(data);
 };
 
+export const getPropertyStartingValue = async (
+  propertyId: string,
+): Promise<number> => {
+  const { data, error } = await supabase
+    .from("properties")
+    .select("starting_value")
+    .eq("id", propertyId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error(`Property with ID ${propertyId} not found`);
+
+  return Number(data.starting_value ?? 0);
+};
+
+interface PropertyOfferTerm {
+  propertyId: string;
+  offerTermId: string | null;
+  termPct: number;
+  name: string | null;
+}
+
+export const getPropertyOfferTerm = async (
+  propertyId: string,
+): Promise<number | null> => {
+  const { data, error } = await supabase
+    .from("properties")
+    .select(
+      `
+      offer_term:offer_terms!properties_offer_terms_id_fkey (
+        id,
+        price_multiplier
+      )
+    `,
+    )
+    .eq("id", propertyId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  const rawOfferTerm = data.offer_term as Record<string, any> | null;
+
+  return Number(rawOfferTerm?.price_multiplier ?? 0.0);
+};
+
 export const updateProperty = async (
   id: string,
   input: Partial<UpdatePropertyRequest>,
@@ -81,31 +139,37 @@ export const updateProperty = async (
     updated_at: new Date().toISOString(),
   };
 
-  if (input.addressLine1 !== undefined) updatePayload.address_line1 = input.addressLine1;
+  if (input.addressLine1 !== undefined)
+    updatePayload.address_line1 = input.addressLine1;
   if (input.city !== undefined) updatePayload.city = input.city;
   if (input.state !== undefined) updatePayload.state = input.state;
-  if (input.postalCode !== undefined) updatePayload.postal_code = input.postalCode;
+  if (input.postalCode !== undefined)
+    updatePayload.postal_code = input.postalCode;
 
   if (input.latitude !== undefined) updatePayload.latitude = input.latitude;
   if (input.longitude !== undefined) updatePayload.longitude = input.longitude;
-  if (input.addressProvider !== undefined) updatePayload.address_provider = input.addressProvider;
-  if (input.providerPlaceId !== undefined) updatePayload.provider_place_id = input.providerPlaceId;
+  if (input.addressProvider !== undefined)
+    updatePayload.address_provider = input.addressProvider;
+  if (input.providerPlaceId !== undefined)
+    updatePayload.provider_place_id = input.providerPlaceId;
 
-  if (input.squareFeet !== undefined) updatePayload.square_feet = input.squareFeet;
+  if (input.squareFeet !== undefined)
+    updatePayload.square_feet = input.squareFeet;
 
-  if (input.startingValue !== undefined) updatePayload.starting_value = input.startingValue;
+  if (input.startingValue !== undefined)
+    updatePayload.starting_value = input.startingValue;
   if (input.offerTermsId !== undefined) {
     updatePayload.offer_terms_id = input.offerTermsId ?? null;
   }
 
-  if(input.userId !== undefined) {
-    if(input.userId !== null) {
+  if (input.userId !== undefined) {
+    if (input.userId !== null) {
       const found = await findUserById(input.userId);
 
-      if (!found) throw new Error('User not found');
+      if (!found) throw new Error("User not found");
     }
 
-    updatePayload.user_id = input.userId
+    updatePayload.user_id = input.userId;
   }
 
   const { data, error } = await supabase
@@ -139,7 +203,72 @@ export const deleteProperty = async (id: string): Promise<boolean> => {
   return count !== null && count > 0;
 };
 
-function mapToPropertyResponse (data: Record<string, any>): PropertyResponse {
+export const calculatePropertyEstimate = async (propertyId: string) => {
+  const review = await getPropertyReview(propertyId);
+
+  if (!review) {
+    throw new Error("No successful review found for this property.");
+  }
+
+  const [startingValue, offerTermPct] = await Promise.all([
+    getPropertyStartingValue(propertyId),
+    getPropertyOfferTerm(propertyId),
+  ]);
+
+  if (offerTermPct === null) {
+    throw new Error("Failed to search offer term");
+  }
+
+  // 3. Fetch current component repair records
+  const repairRecords = await getPropertyRepairReviews(review.id);
+
+  const totalAdjustmentPct = review.conditionAdjustmentPct ?? 0;
+
+  // 4. Update component repair estimates with calculated amounts
+  const repairUpdates = await Promise.all(
+    repairRecords.map(async (record) => {
+      const component = await getComponentGradeByKeyAndGrade(
+        record.componentKey,
+        record.grade,
+      );
+
+      if (!component) {
+        throw new Error(
+          `No component ${record.componentKey} with grade ${record.grade} present`,
+        );
+      }
+
+      const componentImpactAmount =
+        startingValue * (component.gradePercentage / 100);
+
+      const storeValue: StoreComponentRepairEstimateInput = {
+        propertyId,
+        aiPropertyReviewId: review.id,
+        componentKey: record.componentKey,
+        grade: record.grade,
+        repairPrice: componentImpactAmount,
+        reviewResponse: record.reviewResponse,
+      };
+
+      return storeValue;
+    }),
+  );
+
+  await saveBatchComponentRepairReviews(repairUpdates);
+
+  const finalEstimatedPrice =
+    startingValue * (1 + totalAdjustmentPct / 100) * (1 + offerTermPct / 100);
+
+  return {
+    propertyId,
+    startingValue,
+    totalAdjustmentPct,
+    offerTermPct,
+    finalEstimatedPrice,
+  };
+};
+
+function mapToPropertyResponse(data: Record<string, any>): PropertyResponse {
   return {
     id: data.id,
 
@@ -167,4 +296,4 @@ function mapToPropertyResponse (data: Record<string, any>): PropertyResponse {
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
-};
+}
