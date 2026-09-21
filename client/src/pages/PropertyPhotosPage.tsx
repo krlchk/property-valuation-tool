@@ -164,45 +164,73 @@ export const PropertyPhotosPage = () => {
       );
 
       if (failures.length > 0) {
-        console.error("Failed to upload property photo:", failures[0].reason);
-        await Promise.allSettled(
-          additions.map((photo) => propertyPhotosService.remove(photo.id)),
+        console.error(
+          "Some property photos failed to upload:",
+          failures.map((failure) => failure.reason),
         );
         setPhotoError(
-          failures[0].reason instanceof Error
-            ? failures[0].reason.message
-            : "Some photos could not be uploaded. Please try again.",
+          additions.length > 0
+            ? `${additions.length} photo${additions.length === 1 ? "" : "s"} uploaded. ${failures.length} could not be uploaded. Please try again.`
+            : failures[0].reason instanceof Error
+              ? failures[0].reason.message
+              : "Some photos could not be uploaded. Please try again.",
         );
-        clearPendingPhotos();
-        return;
       }
 
       clearPendingPhotos();
-      const next = [...photosRef.current, ...additions];
-      setPhotos(next);
+      if (additions.length > 0) {
+        const next = [...photosRef.current, ...additions];
+        photosRef.current = next;
+        setPhotos(next);
+      }
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleDeletePhoto = async (id: string) => {
-    try {
-      await propertyPhotosService.remove(id);
-    } catch (error) {
-      console.error("Failed to delete property photo:", error);
-      setPhotoError("Failed to delete the photo. Please try again.");
-      return;
+  const handleDeletePhotos = async (ids: string[]): Promise<string[]> => {
+    const uniqueIds = [...new Set(ids)];
+    const results = await Promise.allSettled(
+      uniqueIds.map((id) => propertyPhotosService.remove(id)),
+    );
+    const deletedIds = uniqueIds.filter(
+      (_, index) => results[index]?.status === "fulfilled",
+    );
+    const failedCount = results.length - deletedIds.length;
+
+    if (failedCount > 0) {
+      console.error(
+        "Failed to delete property photos:",
+        results
+          .filter((result) => result.status === "rejected")
+          .map((result) => result.reason),
+      );
+      setPhotoError(
+        failedCount === 1
+          ? "Failed to delete one photo. Please try again."
+          : `Failed to delete ${failedCount} photos. Please try again.`,
+      );
+    } else {
+      setPhotoError(null);
     }
 
-    const target = photosRef.current.find((photo) => photo.id === id);
-    if (target?.url.startsWith("blob:")) URL.revokeObjectURL(target.url);
+    const deletedSet = new Set(deletedIds);
+    const deletedPhotos = photosRef.current.filter((photo) =>
+      deletedSet.has(photo.id),
+    );
+    for (const photo of deletedPhotos) {
+      if (photo.url.startsWith("blob:")) URL.revokeObjectURL(photo.url);
+    }
 
-    const next = photosRef.current.filter((photo) => photo.id !== id);
+    const next = photosRef.current.filter((photo) => !deletedSet.has(photo.id));
+    photosRef.current = next;
     setPhotos(next);
 
     if (viewingCategory && !next.some((p) => p.category === viewingCategory)) {
       setViewingCategory(null);
     }
+
+    return deletedIds;
   };
 
   const usedCategories = categories.filter((category) =>
@@ -438,7 +466,7 @@ export const PropertyPhotosPage = () => {
         category={viewingCategory}
         photos={viewingCategory ? photosIn(viewingCategory) : []}
         onClose={() => setViewingCategory(null)}
-        onDelete={handleDeletePhoto}
+        onDelete={handleDeletePhotos}
       />
     </StepsWrapper>
   );
