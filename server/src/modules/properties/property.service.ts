@@ -257,7 +257,7 @@ export const calculatePropertyEstimate = async (propertyId: string) => {
   await saveBatchComponentRepairReviews(repairUpdates);
 
   const finalEstimatedPrice =
-    startingValue * (1 + totalAdjustmentPct / 100) * (1 + offerTermPct / 100);
+    startingValue * (1 + totalAdjustmentPct / 100) * offerTermPct;
 
   return {
     propertyId,
