@@ -1,6 +1,13 @@
-import { DateField, DeleteButton, EditButton, List, ShowButton, useTable } from "@refinedev/antd";
+import {
+  // DateField,
+  DeleteButton,
+  EditButton,
+  List,
+  ShowButton,
+  useTable,
+} from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
-import { Space, Table } from "antd";
+import { Space, Table, Tooltip, Typography } from "antd";
 import type { User } from "@pvt/shared";
 
 export const UsersList = () => {
@@ -9,7 +16,17 @@ export const UsersList = () => {
   return (
     <List>
       <Table {...tableProps} rowKey="id">
-        <Table.Column dataIndex="id" title="ID" />
+        <Table.Column
+          dataIndex="id"
+          title="ID"
+          render={(id: string) => (
+            <Tooltip title={id}>
+              <Typography.Text copyable={{ text: id }} code>
+                {id ? `${id.slice(0, 8)}...` : "-"}
+              </Typography.Text>
+            </Tooltip>
+          )}
+        />
         <Table.Column dataIndex="name" title="Name" />
         <Table.Column dataIndex="email" title="Email" />
         <Table.Column dataIndex="mobileNumber" title="Mobile number" />

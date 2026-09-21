@@ -22,7 +22,9 @@ export const getAllOffersController = async (req: Request, res: Response) => {
     return res.status(200).json(offers);
   } catch (error: any) {
     console.error("Failed to fetch offers:", error);
-    return res.status(500).json({ error: error?.message || "Failed to fetch offers" });
+    return res
+      .status(500)
+      .json({ error: error?.message || "Failed to fetch offers" });
   }
 };
 
@@ -36,7 +38,9 @@ export const getOfferByIdController = async (req: Request, res: Response) => {
       : res.status(404).json({ error: "Offer not found" });
   } catch (error: any) {
     console.error("Failed to fetch offer:", error);
-    return res.status(500).json({ error: error?.message || "Failed to fetch offer" });
+    return res
+      .status(500)
+      .json({ error: error?.message || "Failed to fetch offer" });
   }
 };
 
@@ -45,30 +49,46 @@ export const createOfferController = async (req: Request, res: Response) => {
     const { propertyId, userId, minPrice, maxPrice, status } = req.body;
 
     if (!propertyId || typeof propertyId !== "string") {
-      return res.status(400).json({ error: "propertyId is required and must be a string" });
+      return res
+        .status(400)
+        .json({ error: "propertyId is required and must be a string" });
     }
 
     if (!userId || typeof userId !== "string") {
-      return res.status(400).json({ error: "userId is required and must be a string" });
+      return res
+        .status(400)
+        .json({ error: "userId is required and must be a string" });
     }
 
     if (typeof minPrice !== "number" || typeof maxPrice !== "number") {
-      return res.status(400).json({ error: "minPrice and maxPrice are required numbers" });
+      return res
+        .status(400)
+        .json({ error: "minPrice and maxPrice are required numbers" });
     }
 
     if (minPrice > maxPrice) {
-      return res.status(400).json({ error: "minPrice cannot be greater than maxPrice" });
+      return res
+        .status(400)
+        .json({ error: "minPrice cannot be greater than maxPrice" });
     }
 
     if (status !== undefined && !isOfferStatus(status)) {
       return res.status(400).json({ error: "Invalid status value" });
     }
 
-    const newOffer = await createOffer({ propertyId, userId, minPrice, maxPrice, status });
+    const newOffer = await createOffer({
+      propertyId,
+      userId,
+      minPrice,
+      maxPrice,
+      status,
+    });
     return res.status(201).json(newOffer);
   } catch (error: any) {
     console.error("Failed to create offer:", error);
-    return res.status(500).json({ error: error?.message || "Failed to create offer" });
+    return res
+      .status(500)
+      .json({ error: error?.message || "Failed to create offer" });
   }
 };
 
@@ -81,8 +101,14 @@ export const updateOfferController = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid status value" });
     }
 
-    if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
-      return res.status(400).json({ error: "minPrice cannot be greater than maxPrice" });
+    if (
+      minPrice !== undefined &&
+      maxPrice !== undefined &&
+      minPrice > maxPrice
+    ) {
+      return res
+        .status(400)
+        .json({ error: "minPrice cannot be greater than maxPrice" });
     }
 
     const updated = await updateOffer(id, { minPrice, maxPrice, status });
@@ -91,7 +117,9 @@ export const updateOfferController = async (req: Request, res: Response) => {
       : res.status(404).json({ error: "Offer not found" });
   } catch (error: any) {
     console.error("Failed to update offer:", error);
-    return res.status(500).json({ error: error?.message || "Failed to update offer" });
+    return res
+      .status(500)
+      .json({ error: error?.message || "Failed to update offer" });
   }
 };
 
@@ -101,15 +129,20 @@ export const deleteOfferController = async (req: Request, res: Response) => {
 
     const deleted = await deleteOffer(id);
     return deleted
-      ? res.status(204).send()
+      ? res.status(200).json({ deleted: true, id })
       : res.status(404).json({ error: "Offer not found" });
   } catch (error: any) {
     console.error("Failed to delete offer:", error);
-    return res.status(500).json({ error: error?.message || "Failed to delete offer" });
+    return res
+      .status(500)
+      .json({ error: error?.message || "Failed to delete offer" });
   }
 };
 
-export const getOfferHistoryController = async (req: Request, res: Response) => {
+export const getOfferHistoryController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const { id } = getIdFromParam(req);
 
@@ -117,6 +150,8 @@ export const getOfferHistoryController = async (req: Request, res: Response) => 
     return res.status(200).json(history);
   } catch (error: any) {
     console.error("Failed to fetch offer history:", error);
-    return res.status(500).json({ error: error?.message || "Failed to fetch offer history" });
+    return res
+      .status(500)
+      .json({ error: error?.message || "Failed to fetch offer history" });
   }
 };

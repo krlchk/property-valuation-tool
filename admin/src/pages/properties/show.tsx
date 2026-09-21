@@ -16,6 +16,7 @@ import {
   Tooltip,
 } from "antd";
 import {
+  ArrowLeftOutlined,
   FileTextOutlined,
   HomeOutlined,
   PictureOutlined,
@@ -24,13 +25,21 @@ import {
   DownloadOutlined,
   RobotOutlined,
 } from "@ant-design/icons";
-import type { Offer, OfferTerm, PropertyPhoto, PropertyResponse, PropertyReview, User } from "@pvt/shared";
+import type {
+  Offer,
+  OfferTerm,
+  PropertyPhoto,
+  PropertyResponse,
+  PropertyReview,
+  User,
+} from "@pvt/shared";
 import { API_URL } from "../../providers/constants";
+import { downloadReview } from "../../utils/download-review";
 
 const { Text, Link } = Typography;
 
 export const PropertyShow = () => {
-  const { show } = useNavigation();
+  const { show, list } = useNavigation();
 
   const {
     result: record,
@@ -39,7 +48,7 @@ export const PropertyShow = () => {
 
   const {
     result: user,
-    query: { isLoading: userIsLoading},
+    query: { isLoading: userIsLoading },
   } = useOne<User>({
     resource: "users",
     id: record?.userId || "",
@@ -50,7 +59,7 @@ export const PropertyShow = () => {
 
   const {
     result: term,
-    query: {isLoading: termIsLoading},
+    query: { isLoading: termIsLoading },
   } = useOne<OfferTerm>({
     resource: "offer-terms",
     id: record?.offerTermsId ? String(record.offerTermsId) : "",
@@ -70,7 +79,6 @@ export const PropertyShow = () => {
     },
   });
 
-
   const {
     result: { data: offers },
     query: { isLoading: offersIsLoading },
@@ -82,8 +90,6 @@ export const PropertyShow = () => {
     },
   });
 
-
-  
   const {
     result: { data: aiReviews },
     query: { isLoading: aiReviewsIsLoading, isError: aiReviewsIsError },
@@ -93,18 +99,7 @@ export const PropertyShow = () => {
     queryOptions: { enabled: !!record?.id },
   });
 
-  const downloadSingleReviewResponse = (review: PropertyReview) => {
-    if (!review.reviewResponse) return;
-
-    const jsonString = JSON.stringify(review.reviewResponse, null, 2);
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `property-${record?.id}-review-${review.id}-response.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+  console.log(aiReviews);
 
   const aiReviewsTabContent = (
     <Card title="Saved AI review responses">
@@ -118,11 +113,22 @@ export const PropertyShow = () => {
           pagination={{ pageSize: 5 }}
           expandable={{
             expandedRowRender: (record) => (
-              <div style={{ background: "#f5f5f5", padding: 16, borderRadius: 6 }}>
-                <Text type="secondary" strong style={{ display: "block", marginBottom: 8 }}>
+              <div>
+                <Text
+                  type="secondary"
+                  strong
+                  style={{ display: "block", marginBottom: 8 }}
+                >
                   reviewResponse JSON:
                 </Text>
-                <pre style={{ maxHeight: 300, overflow: "auto", margin: 0, whiteSpace: "pre-wrap" }}>
+                <pre
+                  style={{
+                    maxHeight: 300,
+                    overflow: "auto",
+                    margin: 0,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
                   {JSON.stringify(record.reviewResponse, null, 2)}
                 </pre>
               </div>
@@ -133,32 +139,18 @@ export const PropertyShow = () => {
           <Table.Column dataIndex="id" title="ID" width={80} />
 
           <Table.Column
-            dataIndex="estimatedPrice"
-            title="Estimated Price"
-            render={(val: number) => (
-              <NumberField value={val} options={{ style: "currency", currency: "USD" }} />
+            dataIndex="result"
+            title="Result"
+            render={(value: string) => (
+              <Tag color={value === "success" ? "blue" : "red"}>{value}</Tag>
             )}
           />
 
           <Table.Column
             dataIndex="conditionAdjustmentPct"
             title="Condition Adj."
-            render={(val: number) => <Tag color={val < 0 ? "volcano" : "green"}>{val}%</Tag>}
-          />
-
-          <Table.Column
-            dataIndex="offerTermPct"
-            title="Offer Term Adj."
-            render={(val: number) => <Tag color={val < 0 ? "volcano" : "blue"}>{val}%</Tag>}
-          />
-
-          <Table.Column
-            dataIndex="finalEstimatedPrice"
-            title="Final Price"
             render={(val: number) => (
-              <Text strong>
-                <NumberField value={val} options={{ style: "currency", currency: "USD" }} />
-              </Text>
+              <Tag color={val < 0 ? "volcano" : "green"}>{val}%</Tag>
             )}
           />
 
@@ -177,7 +169,7 @@ export const PropertyShow = () => {
                 <Button
                   type="text"
                   icon={<DownloadOutlined />}
-                  onClick={() => downloadSingleReviewResponse(record)}
+                  onClick={() => downloadReview(record)}
                   disabled={!record.reviewResponse}
                 >
                   JSON
@@ -194,7 +186,13 @@ export const PropertyShow = () => {
     <Space direction="vertical" style={{ width: "100%" }} size="large">
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
-          <Card title={<Space><HomeOutlined /> Property & Valuation</Space>}>
+          <Card
+            title={
+              <Space>
+                <HomeOutlined /> Property & Valuation
+              </Space>
+            }
+          >
             <Row gutter={[16, 16]}>
               <Col span={12}>
                 <Text type="secondary">Square Feet</Text>
@@ -216,18 +214,28 @@ export const PropertyShow = () => {
               </Col>
               <Col span={12}>
                 <Text type="secondary">Condition Pct %</Text>
-                <div><TextField value={"N/A"} /></div>
+                <div>
+                  <TextField value={"N/A"} />
+                </div>
               </Col>
               <Col span={12}>
                 <Text type="secondary">Estimated Price</Text>
-                <div><TextField value={"N/A"} /></div>
+                <div>
+                  <TextField value={"N/A"} />
+                </div>
               </Col>
             </Row>
           </Card>
         </Col>
 
         <Col xs={24} md={12}>
-          <Card title={<Space><UserOutlined /> Relations & Terms</Space>}>
+          <Card
+            title={
+              <Space>
+                <UserOutlined /> Relations & Terms
+              </Space>
+            }
+          >
             <Row gutter={[16, 16]}>
               <Col span={24}>
                 <Text type="secondary">Owner / User</Text>
@@ -252,7 +260,7 @@ export const PropertyShow = () => {
                   {termIsLoading ? (
                     <Text type="secondary">Loading...</Text>
                   ) : term ? (
-                    <Link onClick={() => show("offer-terms", String(term.id))}>
+                    <Link onClick={() => list("offer-terms")}>
                       <Space>
                         <FileTextOutlined />
                         {term.key}
@@ -272,19 +280,27 @@ export const PropertyShow = () => {
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} md={8}>
             <Text type="secondary">Address Line 1</Text>
-            <div><TextField value={record?.addressLine1} /></div>
+            <div>
+              <TextField value={record?.addressLine1} />
+            </div>
           </Col>
           <Col xs={12} sm={6} md={4}>
             <Text type="secondary">City</Text>
-            <div><TextField value={record?.city} /></div>
+            <div>
+              <TextField value={record?.city} />
+            </div>
           </Col>
           <Col xs={12} sm={6} md={4}>
             <Text type="secondary">State</Text>
-            <div><TextField value={record?.state} /></div>
+            <div>
+              <TextField value={record?.state} />
+            </div>
           </Col>
           <Col xs={12} sm={6} md={4}>
             <Text type="secondary">Postal Code</Text>
-            <div><TextField value={record?.postalCode} /></div>
+            <div>
+              <TextField value={record?.postalCode} />
+            </div>
           </Col>
           <Col xs={24} sm={12} md={8}>
             <Text type="secondary">Coordinates</Text>
@@ -300,11 +316,15 @@ export const PropertyShow = () => {
           </Col>
           <Col xs={12} sm={6} md={4}>
             <Text type="secondary">Provider</Text>
-            <div><TextField value={record?.addressProvider ?? "N/A"} /></div>
+            <div>
+              <TextField value={record?.addressProvider ?? "N/A"} />
+            </div>
           </Col>
           <Col xs={12} sm={6} md={4}>
             <Text type="secondary">Place ID</Text>
-            <div><TextField value={record?.providerPlaceId ?? "N/A"} /></div>
+            <div>
+              <TextField value={record?.providerPlaceId ?? "N/A"} />
+            </div>
           </Col>
         </Row>
       </Card>
@@ -314,15 +334,21 @@ export const PropertyShow = () => {
         <Row gutter={[16, 16]}>
           <Col xs={12} sm={6}>
             <Text type="secondary">Property ID</Text>
-            <div><Text copyable>{record?.id}</Text></div>
+            <div>
+              <Text copyable>{record?.id}</Text>
+            </div>
           </Col>
           <Col xs={12} sm={6}>
             <Text type="secondary">Created At</Text>
-            <div><DateField value={record?.createdAt} format="LLL" /></div>
+            <div>
+              <DateField value={record?.createdAt} format="LLL" />
+            </div>
           </Col>
           <Col xs={12} sm={6}>
             <Text type="secondary">Updated At</Text>
-            <div><DateField value={record?.updatedAt} format="LLL" /></div>
+            <div>
+              <DateField value={record?.updatedAt} format="LLL" />
+            </div>
           </Col>
         </Row>
       </Card>
@@ -342,7 +368,9 @@ export const PropertyShow = () => {
               cover={
                 <Image
                   alt={photo.category}
-                  src={photo.url ?? "https://via.placeholder.com/300?text=No+Image"}
+                  src={
+                    photo.url ?? "https://via.placeholder.com/300?text=No+Image"
+                  }
                   height={200}
                   style={{ objectFit: "cover" }}
                 />
@@ -378,14 +406,20 @@ export const PropertyShow = () => {
           dataIndex="minPrice"
           title="Min Price"
           render={(value: number) => (
-            <NumberField value={value} options={{ style: "currency", currency: "USD" }} />
+            <NumberField
+              value={value}
+              options={{ style: "currency", currency: "USD" }}
+            />
           )}
         />
         <Table.Column
           dataIndex="maxPrice"
           title="Max Price"
           render={(value: number) => (
-            <NumberField value={value} options={{ style: "currency", currency: "USD" }} />
+            <NumberField
+              value={value}
+              options={{ style: "currency", currency: "USD" }}
+            />
           )}
         />
         <Table.Column
@@ -403,7 +437,18 @@ export const PropertyShow = () => {
   );
 
   return (
-    <Show isLoading={isLoading}>
+    <Show
+      isLoading={isLoading}
+      goBack={false}
+      headerButtons={() => (
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => list("properties")}
+        >
+          Back to properties
+        </Button>
+      )}
+    >
       <Tabs
         defaultActiveKey="details"
         items={[
@@ -439,7 +484,11 @@ export const PropertyShow = () => {
           },
           {
             key: "ai-reviews",
-            label: <Space><RobotOutlined /> AI Reviews ({aiReviews?.length ?? 0})</Space>,
+            label: (
+              <Space>
+                <RobotOutlined /> AI Reviews ({aiReviews?.length ?? 0})
+              </Space>
+            ),
             children: aiReviewsTabContent,
           },
         ]}

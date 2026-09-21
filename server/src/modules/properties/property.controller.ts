@@ -7,14 +7,7 @@ import {
   getPropertyById,
   updateProperty,
 } from "./property.service";
-import {
-  DEFAULT_LIMIT,
-  DEFAULT_PAGE,
-  getIdFromParam,
-  MAX_LIMIT,
-  parsePaginationParam,
-} from "../../utils/query";
-import { getOfferTermsById } from "../offer-terms/offer-terms.service";
+import { getIdFromParam } from "../../utils/query";
 import { EstimatePropertyRequest } from "@pvt/shared";
 
 export const getAllPropertiesController = async (
@@ -22,14 +15,7 @@ export const getAllPropertiesController = async (
   res: Response,
 ) => {
   try {
-    const page = parsePaginationParam(req.query.page, DEFAULT_PAGE);
-    const limit = parsePaginationParam(req.query.limit, DEFAULT_LIMIT);
-
-    if (page === null || limit === null || limit > MAX_LIMIT) {
-      return res.status(400).json({
-        error: `page and limit must be positive integers; limit cannot exceed ${MAX_LIMIT}`,
-      });
-    }
+    const { page, limit } = req.pagination;
 
     const result = await getAllProperties(page, limit);
 
@@ -53,7 +39,6 @@ export const getAllPropertiesController = async (
 export const getPropertyByIdController = async (
   req: Request,
   res: Response,
-  next: NextFunction,
 ) => {
   const { id } = getIdFromParam(req);
 
@@ -199,7 +184,7 @@ export const deletePropertyController = async (req: Request, res: Response) => {
       throw new Error();
     }
 
-    return res.status(204).json(null);
+    return res.status(200).json({ deleted: true, id });
   } catch (error) {
     console.error("Failed to delete property: " + error);
 

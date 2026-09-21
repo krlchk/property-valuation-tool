@@ -3,6 +3,8 @@ import type {
   ComponentEvaluationGrade,
   ComponentGradeType,
   EvaluatedComponentResult,
+  FetchAllResponse,
+  PaginatedResponse,
   PropertyComponentCategory,
   PropertyPhoto,
   PropertyPhotoReview,
@@ -94,18 +96,106 @@ export const saveBatchComponentRepairReviews = async (
   return data;
 };
 
-// export const getPropertyReviews = async (
-//   propertyId: string,
-// ): Promise<PropertyReview[]> => {
-//   const { data, error } = await supabase
-//     .from("ai_property_reviews")
-//     .select("*")
-//     .eq("property_id", propertyId)
-//     .order("created_at", { ascending: false });
+type PropertyRepairReviewInsert = {
+  property_id: string;
+  ai_property_review_id: number;
+  component_key: string;
+  grade: string;
+  estimated_repair_price: number | null;
+  review_response: RepairEstimate;
+  updated_at: string;
+};
 
-//   if (error) throw error;
-//   return (data || []).map(mapPropertyAiReview);
-// };
+export const deletePropertyRepairReviews = async (
+  aiPropertyReviewId: number,
+): Promise<void> => {
+  const { error } = await supabase
+    .from("property_repair_reviews")
+    .delete()
+    .eq("ai_property_review_id", aiPropertyReviewId);
+
+  if (error) throw error;
+};
+
+export const storeRepairs = async (
+  repairInputs: PropertyRepairReviewInsert[],
+) => {
+  if (!repairInputs.length) return [];
+
+  const { data, error: repairError } = await supabase
+    .from("property_repair_reviews")
+    .upsert(repairInputs, {
+      onConflict: "ai_property_review_id, component_key",
+    })
+    .select("*");
+
+  if (repairError) throw repairError;
+
+  return data;
+};
+
+export const getReviews = async (
+  page: number,
+  limit: number,
+): Promise<FetchAllResponse<PropertyReview>> => {
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  const { data, error, count } = await supabase
+    .from("ai_property_reviews")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) throw error;
+  return {
+    data: (data || []).map(mapPropertyAiReview),
+    total: count ?? 0,
+  };
+};
+
+export const getPropertyReviews = async (
+  propertyId: string,
+): Promise<PropertyReview[]> => {
+  const { data, error } = await supabase
+    .from("ai_property_reviews")
+    .select("*")
+    .eq("property_id", propertyId)
+    .order("result", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map(mapPropertyAiReview);
+};
+
+export const getAIReview = async (id: number) => {
+  const { data, error } = await supabase
+    .from("ai_property_reviews")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+
+  if (!data) {
+    return null;
+  }
+
+  return mapPropertyAiReview(data);
+};
+
+export const deleteAIReview = async (id: number): Promise<boolean> => {
+  await deletePropertyRepairReviews(id);
+
+  const { error, count } = await supabase
+    .from("ai_property_reviews")
+    .delete({ count: "exact" })
+    .eq("id", id);
+
+  if (error) throw error;
+
+  return count !== null && count > 0;
+};
 
 export const getPropertyReview = async (
   propertyId: string,
@@ -114,15 +204,15 @@ export const getPropertyReview = async (
     .from("ai_property_reviews")
     .select("*")
     .eq("property_id", propertyId)
+    .eq("result", "success")
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .single();
 
   if (error) {
+    if (error.code === "PGRST116") return null;
     throw error;
   }
-
-  if (!data || data.result !== "success") return null;
 
   return mapPropertyAiReview(data);
 };
@@ -192,16 +282,7 @@ export const requestPropertyReview = async (
 
   // 1. Update the latest successful review, or insert one when none exists.
   // Failed reviews are intentionally never reused and are always inserted.
-  const { data: existingReview, error: existingReviewError } = await supabase
-    .from("ai_property_reviews")
-    .select("id")
-    .eq("property_id", propertyId)
-    .eq("result", "success")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (existingReviewError) throw existingReviewError;
+  const existingReview = await getPropertyReview(propertyId);
 
   const reviewValues = {
     property_id: propertyId,
@@ -236,17 +317,13 @@ export const requestPropertyReview = async (
       component_key: evaluation.component,
       grade: evaluation.grade,
       estimated_repair_price: null,
-      review_response: evaluation.repairEstimate,
+      review_response: evaluation.repairEstimate!,
       updated_at: new Date().toISOString(),
     }));
 
-  const { error: repairError } = await supabase
-    .from("property_repair_reviews")
-    .upsert(repairInputs, {
-      onConflict: "ai_property_review_id, component_key",
-    });
+  await deletePropertyRepairReviews(storedReview.id);
 
-  if (repairError) throw repairError;
+  await storeRepairs(repairInputs);
 
   return {
     status: "SUCCESS",

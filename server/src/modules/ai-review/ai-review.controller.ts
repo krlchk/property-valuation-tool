@@ -5,8 +5,13 @@ import {
   getPropertyReview,
   getPropertyRepairReviews,
   requestPropertyReview,
+  getPropertyReviews,
+  getReviews,
+  getAIReview,
+  deleteAIReview,
 } from "./ai-review.service";
 import { PropertyReviewResult } from "@pvt/shared";
+import { getIdFromParam } from "../../utils/query";
 
 const parsePositiveInteger = (value: string | string[] | undefined) => {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -64,6 +69,92 @@ export const getPropertyReviewController = async (
 
   try {
     return res.status(200).json(await getPropertyReview(propertyId));
+  } catch (error) {
+    console.error("Failed to fetch property AI reviews:", error);
+    return res
+      .status(500)
+      .json({ error: "Failed to fetch property AI reviews" });
+  }
+};
+
+export const getReviewsController = async (req: Request, res: Response) => {
+  const { page, limit } = req.pagination;
+
+  try {
+    const { data, total } = await getReviews(page, limit);
+
+    return res.status(200).json({
+      items: data,
+      pagination: {
+        page,
+        limit,
+        total: total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    console.error("Failed to fetch AI reviews:", error);
+    return res.status(500).json({ error: "Failed to fetch AI reviews" });
+  }
+};
+
+export const getAIReviewController = async (req: Request, res: Response) => {
+  const { id } = getIdFromParam(req, true);
+
+  if (!id) {
+    return res.status(400).json({ error: "Review ID is required" });
+  }
+
+  try {
+    const review = await getAIReview(id);
+
+    if (!review) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+    return res.status(200).json(review);
+  } catch (error) {
+    console.error("Failed to fetch property AI reviews:", error);
+    return res.status(500).json({ error: "Failed to fetch AI review" });
+  }
+};
+
+export const deleteAIReviewController = async (req: Request, res: Response) => {
+  const { id } = getIdFromParam(req, true);
+
+  if (id <= 0) {
+    return res.status(400).json({ error: "Valid review ID is required" });
+  }
+
+  try {
+    const deleted = await deleteAIReview(id);
+
+    if (!deleted) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+
+    return res.status(200).json({ deleted: true, id });
+  } catch (error: any) {
+    console.error("Failed to delete AI review:", error);
+    return res
+      .status(500)
+      .json({ error: error?.message || "Failed to delete AI review" });
+  }
+};
+
+export const getPropertyReviewsController = async (
+  req: Request,
+  res: Response,
+) => {
+  const rawPropertyId = req.params.propertyId;
+  const propertyId = Array.isArray(rawPropertyId)
+    ? rawPropertyId[0]
+    : rawPropertyId;
+
+  if (!propertyId)
+    return res.status(400).json({ error: "Property ID is required" });
+
+  try {
+    return res.status(200).json(await getPropertyReviews(propertyId));
   } catch (error) {
     console.error("Failed to fetch property AI reviews:", error);
     return res

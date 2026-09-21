@@ -23,6 +23,7 @@ import {
   message,
 } from "antd";
 import {
+  ArrowLeftOutlined,
   MailOutlined,
   HomeOutlined,
   UserOutlined,
@@ -40,7 +41,7 @@ const { Title, Text, Link } = Typography;
 
 export const OfferShow = () => {
   const { id } = useParams<{ id: string }>();
-  const { show } = useNavigation();
+  const { show, list } = useNavigation();
 
   const {
     result: record,
@@ -246,7 +247,18 @@ export const OfferShow = () => {
   );
 
   return (
-    <Show isLoading={isLoading}>
+    <Show
+      isLoading={isLoading}
+      goBack={false}
+      headerButtons={() => (
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => list("offers")}
+        >
+          Back to offers
+        </Button>
+      )}
+    >
       <Tabs
         defaultActiveKey="overview"
         items={[

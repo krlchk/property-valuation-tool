@@ -5,7 +5,12 @@ import {
   storePropertyReviewController,
   getPropertyReviewController,
   getPropertyRepairReviewsController,
+  getPropertyReviewsController,
+  getReviewsController,
+  getAIReviewController,
+  deleteAIReviewController,
 } from "./ai-review.controller";
+import { applyPagination } from "../../middlewares/pagination";
 
 export const aiReviewRouter = Router();
 
@@ -15,7 +20,11 @@ aiReviewRouter.post(
   "/property/:propertyId/store",
   storePropertyReviewController,
 );
-aiReviewRouter.get("/property/:propertyId", getPropertyReviewController);
+aiReviewRouter.get("/", applyPagination(), getReviewsController);
+aiReviewRouter.get("/:id", getAIReviewController);
+aiReviewRouter.delete("/:id", deleteAIReviewController);
+aiReviewRouter.get("/property/:propertyId", getPropertyReviewsController);
+aiReviewRouter.get("/property/:propertyId/review", getPropertyReviewController);
 aiReviewRouter.get(
   "/:aiPropertyReviewId/repairs",
   getPropertyRepairReviewsController,

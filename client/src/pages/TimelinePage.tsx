@@ -128,6 +128,7 @@ export const TimelinePage = () => {
         stepHeaderCurrent={3}
         stepHeaderTotal={4}
         stepHeaderLabel="Step 3 of 4 · Timeline"
+        stepHeaderOnBack={() => navigate(`/addresses/${addressId}/photos`)}
       >
         <ErrorState message={error} />
       </StepsWrapper>
@@ -139,6 +140,7 @@ export const TimelinePage = () => {
       stepHeaderCurrent={3}
       stepHeaderTotal={4}
       stepHeaderLabel="Step 3 of 4 · Timeline"
+      stepHeaderOnBack={() => navigate(`/addresses/${addressId}/photos`)}
     >
       <div className="mt-5">
         <h1 className="font-serif text-hero leading-[1.15]">

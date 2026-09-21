@@ -140,6 +140,7 @@ export const ContactPage = () => {
       stepHeaderCurrent={4}
       stepHeaderTotal={4}
       stepHeaderLabel="Step 4 of 4 · Contact"
+      stepHeaderOnBack={() => navigate(`/addresses/${addressId}/timeline`)}
     >
       <div className="mt-5">
         {contactError && (

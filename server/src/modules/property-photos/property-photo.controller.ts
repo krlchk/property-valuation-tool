@@ -144,7 +144,7 @@ export const deletePropertyPhotoController = async (
 
     const deleted = await deletePropertyPhoto(id);
     return deleted
-      ? res.status(204).send()
+      ? res.status(200).json({ deleted: true, id })
       : res.status(404).json({ error: "Property photo not found" });
   } catch (error) {
     console.error("Failed to delete property photo:", error);

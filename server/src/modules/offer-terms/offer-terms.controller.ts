@@ -8,7 +8,10 @@ import {
 } from "./offer-terms.service";
 import { getIdFromParam } from "../../utils/query";
 
-export const getAllOfferTermsController = async (_req: Request, res: Response) => {
+export const getAllOfferTermsController = async (
+  _req: Request,
+  res: Response,
+) => {
   try {
     const terms = await getAllOfferTerms();
     return res.status(200).json(terms);
@@ -20,7 +23,10 @@ export const getAllOfferTermsController = async (_req: Request, res: Response) =
   }
 };
 
-export const getOfferTermsByIdController = async (req: Request, res: Response) => {
+export const getOfferTermsByIdController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const { id } = getIdFromParam(req, true);
 
@@ -47,7 +53,10 @@ export const getOfferTermsByIdController = async (req: Request, res: Response) =
   }
 };
 
-export const createOfferTermsController = async (req: Request, res: Response) => {
+export const createOfferTermsController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const {
       priceMultiplier,
@@ -63,7 +72,8 @@ export const createOfferTermsController = async (req: Request, res: Response) =>
       inspectionDays === undefined
     ) {
       return res.status(400).json({
-        error: "Missing required offer terms fields (priceMultiplier, closingDaysMin, inspectionDays)",
+        error:
+          "Missing required offer terms fields (priceMultiplier, closingDaysMin, inspectionDays)",
       });
     }
 
@@ -84,7 +94,10 @@ export const createOfferTermsController = async (req: Request, res: Response) =>
   }
 };
 
-export const updateOfferTermsController = async (req: Request, res: Response) => {
+export const updateOfferTermsController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const { id } = getIdFromParam(req, true);
 
@@ -125,7 +138,10 @@ export const updateOfferTermsController = async (req: Request, res: Response) =>
   }
 };
 
-export const deleteOfferTermsController = async (req: Request, res: Response) => {
+export const deleteOfferTermsController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const { id } = getIdFromParam(req, true);
 
@@ -143,7 +159,7 @@ export const deleteOfferTermsController = async (req: Request, res: Response) =>
       });
     }
 
-    return res.status(204).send();
+    return res.status(200).json({ deleted: true, id });
   } catch (error) {
     console.error("Failed to delete offer terms:", error);
     return res.status(500).json({
