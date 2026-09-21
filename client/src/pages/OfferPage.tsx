@@ -134,6 +134,7 @@ export const OfferPage = () => {
         stepHeaderCurrent={4}
         stepHeaderTotal={4}
         stepHeaderLabel="Your offer"
+        stepHeaderOnBack={() => navigate(`/addresses/${addressId}/timeline`)}
       >
         <ErrorState
           message={
@@ -152,6 +153,7 @@ export const OfferPage = () => {
         stepHeaderCurrent={4}
         stepHeaderTotal={4}
         stepHeaderLabel="Your offer"
+        stepHeaderOnBack={() => navigate(`/addresses/${addressId}/timeline`)}
       >
         <LoadingSpinner label="Loading your offer details..." />
       </StepsWrapper>
@@ -169,6 +171,7 @@ export const OfferPage = () => {
         stepHeaderCurrent={4}
         stepHeaderTotal={4}
         stepHeaderLabel="Your offer"
+        stepHeaderOnBack={() => navigate(`/addresses/${addressId}/timeline`)}
       >
         <ErrorState
           message={

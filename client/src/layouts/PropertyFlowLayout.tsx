@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Outlet, useLocation, useParams } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { LoadingSpinner } from "../components/Loading";
 import { ErrorState } from "../components/Error";
 import { useValuation } from "../context/ValuationContext";
@@ -11,6 +11,7 @@ import { StepsWrapper } from "../components/StepsWrapper";
 
 export const PropertyFlowLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { addressId } = useParams<{ addressId: string }>();
   const {
     hydratedPropertyId,
@@ -88,13 +89,39 @@ export const PropertyFlowLayout = () => {
   const isLoading = hydratedPropertyId !== addressId;
   const error = errorAddressId === addressId ? loadError : null;
   const isPhotosPage = location.pathname.endsWith("/photos");
+  const isOfferFollowUpPage =
+    location.pathname.endsWith("/offer/held") ||
+    location.pathname.endsWith("/offer/breakdown");
   const loadingStep = location.pathname.endsWith("/timeline")
-    ? { stepHeaderCurrent: 3, stepHeaderLabel: "Step 3 of 4 · Timeline" }
+    ? {
+        stepHeaderCurrent: 3,
+        stepHeaderLabel: "Step 3 of 4 · Timeline",
+        stepHeaderOnBack: () => navigate(`/addresses/${addressId}/photos`),
+      }
     : location.pathname.endsWith("/contact")
-      ? { stepHeaderCurrent: 4, stepHeaderLabel: "Step 4 of 4 · Contact" }
+      ? {
+          stepHeaderCurrent: 4,
+          stepHeaderLabel: "Step 4 of 4 · Contact",
+          stepHeaderOnBack: () => navigate(`/addresses/${addressId}/timeline`),
+        }
+      : isOfferFollowUpPage
+        ? {
+            stepHeaderCurrent: 4,
+            stepHeaderLabel: "Your offer",
+            stepHeaderOnBack: () => navigate(`/addresses/${addressId}/offer`),
+          }
       : location.pathname.includes("/offer")
-        ? { stepHeaderCurrent: 4, stepHeaderLabel: "Your offer" }
-        : { stepHeaderCurrent: 1, stepHeaderLabel: "Step 1 of 4 · Address" };
+        ? {
+            stepHeaderCurrent: 4,
+            stepHeaderLabel: "Your offer",
+            stepHeaderOnBack: () =>
+              navigate(`/addresses/${addressId}/timeline`),
+          }
+        : {
+            stepHeaderCurrent: 1,
+            stepHeaderLabel: "Step 1 of 4 · Address",
+            stepHeaderOnBack: undefined,
+          };
 
   if (isLoading && !error && !isPhotosPage) {
     return (
@@ -102,6 +129,7 @@ export const PropertyFlowLayout = () => {
         stepHeaderCurrent={loadingStep.stepHeaderCurrent}
         stepHeaderTotal={4}
         stepHeaderLabel={loadingStep.stepHeaderLabel}
+        stepHeaderOnBack={loadingStep.stepHeaderOnBack}
       >
         <LoadingSpinner label="Loading property details..." />
       </StepsWrapper>

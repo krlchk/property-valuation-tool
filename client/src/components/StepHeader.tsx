@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { StepProgress } from "./StepProgress";
 
 type StepHeaderProps = {
@@ -19,9 +18,6 @@ export const StepHeader = ({
   hideBack = false,
   onBack,
 }: StepHeaderProps) => {
-  const navigate = useNavigate();
-  const handleBack = onBack ?? (() => navigate(-1));
-
   return (
     <header>
       <StepProgress current={current} total={total} className="mt-2" />
@@ -29,10 +25,10 @@ export const StepHeader = ({
         <p className="mt-2 text-label font-semibold tracking-wider text-custom-blue uppercase">
           {label}
         </p>
-        {current > 1 && !hideBack && (
+        {current > 1 && !hideBack && onBack && (
           <button
             type="button"
-            onClick={handleBack}
+            onClick={onBack}
             aria-label="Go back"
             className="mt-2 -ml-1 cursor-pointer p-1 text-label text-gray-500"
           >

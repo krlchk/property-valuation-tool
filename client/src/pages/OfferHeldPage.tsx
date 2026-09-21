@@ -108,6 +108,7 @@ export const OfferHeldPage = () => {
         stepHeaderCurrent={4}
         stepHeaderTotal={4}
         stepHeaderLabel="Offer held"
+        stepHeaderOnBack={() => navigate(`/addresses/${addressId}/offer`)}
       >
         <LoadingSpinner label="Loading your offer details..." />
       </StepsWrapper>
@@ -122,6 +123,7 @@ export const OfferHeldPage = () => {
         stepHeaderCurrent={4}
         stepHeaderTotal={4}
         stepHeaderLabel="Offer held"
+        stepHeaderOnBack={() => navigate(`/addresses/${addressId}/offer`)}
       >
         <ErrorState
           message={errorMessage || "Unable to locate property records."}
