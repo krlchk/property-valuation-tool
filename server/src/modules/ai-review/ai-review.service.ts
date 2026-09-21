@@ -3,6 +3,8 @@ import type {
   ComponentEvaluationGrade,
   ComponentGradeType,
   EvaluatedComponentResult,
+  FetchAllResponse,
+  PaginatedResponse,
   PropertyComponentCategory,
   PropertyPhoto,
   PropertyPhotoReview,
@@ -94,18 +96,72 @@ export const saveBatchComponentRepairReviews = async (
   return data;
 };
 
-// export const getPropertyReviews = async (
-//   propertyId: string,
-// ): Promise<PropertyReview[]> => {
-//   const { data, error } = await supabase
-//     .from("ai_property_reviews")
-//     .select("*")
-//     .eq("property_id", propertyId)
-//     .order("created_at", { ascending: false });
+export const getReviews = async (
+  page: number,
+  limit: number,
+): Promise<FetchAllResponse<PropertyReview>> => {
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
 
-//   if (error) throw error;
-//   return (data || []).map(mapPropertyAiReview);
-// };
+  const { data, error, count } = await supabase
+    .from("ai_property_reviews")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) throw error;
+  return {
+    data: (data || []).map(mapPropertyAiReview),
+    total: count ?? 0,
+  };
+};
+
+export const getPropertyReviews = async (
+  propertyId: string,
+): Promise<PropertyReview[]> => {
+  const { data, error } = await supabase
+    .from("ai_property_reviews")
+    .select("*")
+    .eq("property_id", propertyId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map(mapPropertyAiReview);
+};
+
+export const getAIReview = async (id: number) => {
+  const { data, error } = await supabase
+    .from("ai_property_reviews")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+
+  if (!data) {
+    return null;
+  }
+
+  return mapPropertyAiReview(data);
+};
+
+export const deleteAIReview = async (id: number): Promise<boolean> => {
+  const { error: repairDeleteError } = await supabase
+    .from("property_repair_reviews")
+    .delete()
+    .eq("ai_property_review_id", id);
+
+  if (repairDeleteError) throw repairDeleteError;
+
+  const { error, count } = await supabase
+    .from("ai_property_reviews")
+    .delete({ count: "exact" })
+    .eq("id", id);
+
+  if (error) throw error;
+
+  return count !== null && count > 0;
+};
 
 export const getPropertyReview = async (
   propertyId: string,

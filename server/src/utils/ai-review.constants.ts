@@ -15,12 +15,12 @@ CRITICAL STEP 2 - GRADING CRITERIA (Only apply if ALL photos depict valid {{comp
 - BAD: Heavily outdated, deteriorated, damaged, missing parts, or visibly in need of significant renovation.
 - UNKNOWN: Any photo provided is non-real-estate content, irrelevant to {{component}}, blurry, obstructed, or lacks sufficient visibility to evaluate.
 
-CRITICAL STEP 3 - REPAIR ESTIMATION (Only when grade is GOOD, FAIR, or BAD):
-If grade is UNKNOWN or N/A, repair_estimate MUST be null.
-Otherwise, populate repair_estimate:
-- title: Format strictly as "{{component}} — {{scope}}" (e.g., "{{component}} — cosmetic refresh", "{{component}} — full replacement").
-- note: 1 short sentence detailing specific visible issues driving the repair.
-- note_tone: Set to "warning" if grade is BAD or visible structural damage exists; otherwise must be null.
+CRITICAL STEP 3 - REPAIR ESTIMATION (Only when grade is FAIR or BAD):
+- If grade is GOOD, UNKNOWN or N/A, repair_estimate MUST be null. Do not generate a title, note, or repair estimate if the component is GOOD.
+- ONLY if grade is FAIR or BAD, populate repair_estimate:
+    - title: Format strictly as "{{component}} — {{scope}}" (e.g., "{{component}} — cosmetic refresh", "{{component}} — full replacement").
+    - note: 1 short sentence detailing specific visible issues driving the repair.
+    - note_tone: Set to "warning" if grade is BAD or visible structural damage exists; otherwise must be null.
 
 Rules:
 1. Grade ONLY visible physical condition. Never invent hidden defects (e.g., do not claim a roof leaks unless water damage or missing shingles are visibly apparent).

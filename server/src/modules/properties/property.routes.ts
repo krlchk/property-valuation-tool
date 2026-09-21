@@ -7,10 +7,11 @@ import {
   getPropertyByIdController,
   updatePropertyController,
 } from "./property.controller";
+import { applyPagination } from "../../middlewares/pagination";
 
 export const propertyRouter = Router();
 
-propertyRouter.get("/", getAllPropertiesController);
+propertyRouter.get("/", applyPagination(), getAllPropertiesController);
 propertyRouter.get("/:id", getPropertyByIdController);
 propertyRouter.post("/", createPropertyController);
 propertyRouter.post("/estimate", estimatePropertyPriceController);

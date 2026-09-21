@@ -10,7 +10,7 @@ const inFlightReviews = new Map<string, Promise<ReviewProcessResult>>();
 export const aiReviewService = {
   getPropertyReview: (propertyId: string): Promise<PropertyReview | null> =>
     request<PropertyReview | null>(
-      `/ai-reviews/property/${encodeURIComponent(propertyId)}`,
+      `/ai-reviews/property/${encodeURIComponent(propertyId)}/review`,
     ),
 
   reviewPropertyById: (propertyId: string): Promise<ReviewProcessResult> => {
