@@ -16,6 +16,7 @@ import {
   Tooltip,
 } from "antd";
 import {
+  ArrowLeftOutlined,
   FileTextOutlined,
   HomeOutlined,
   PictureOutlined,
@@ -436,7 +437,18 @@ export const PropertyShow = () => {
   );
 
   return (
-    <Show isLoading={isLoading}>
+    <Show
+      isLoading={isLoading}
+      goBack={false}
+      headerButtons={() => (
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => list("properties")}
+        >
+          Back to properties
+        </Button>
+      )}
+    >
       <Tabs
         defaultActiveKey="details"
         items={[

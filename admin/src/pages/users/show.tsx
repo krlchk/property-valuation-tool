@@ -1,18 +1,28 @@
 import { Show, TextField } from "@refinedev/antd";
-import { useShow } from "@refinedev/core";
-import { Card, Space, Typography } from "antd";
+import { useNavigation, useShow } from "@refinedev/core";
+import { ArrowLeftOutlined } from "@ant-design/icons";
+import { Button, Card, Space, Typography } from "antd";
 import type { User } from "@pvt/shared";
 
 const { Title } = Typography;
 
 export const UserShow = () => {
+  const { list } = useNavigation();
   const {
     result: record,
     query: { isLoading },
   } = useShow<User>();
 
   return (
-    <Show isLoading={isLoading}>
+    <Show
+      isLoading={isLoading}
+      goBack={false}
+      headerButtons={() => (
+        <Button icon={<ArrowLeftOutlined />} onClick={() => list("users")}>
+          Back to users
+        </Button>
+      )}
+    >
       <Card>
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
           <div><Title level={5}>ID</Title><TextField value={record?.id} /></div>

@@ -2,6 +2,7 @@ import { DateField, NumberField, Show } from "@refinedev/antd";
 import { useCustom, useNavigation, useShow } from "@refinedev/core";
 import {
   Alert,
+  Button,
   Card,
   Row,
   Col,
@@ -15,6 +16,7 @@ import type { PropertyRepairReview, PropertyReview } from "@pvt/shared";
 import { useParams } from "react-router";
 import { API_URL } from "../../providers/constants";
 import {
+  ArrowLeftOutlined,
   ClockCircleOutlined,
   HomeOutlined,
   RobotOutlined,
@@ -38,7 +40,7 @@ const getEvaluations = (review?: PropertyReview): ReviewEvaluation[] => {
 export const AiReviewsShow = () => {
   const { id } = useParams<{ id: string }>();
 
-  const { show } = useNavigation();
+  const { show, list } = useNavigation();
   const {
     result: review,
     query: { isLoading },
@@ -255,7 +257,19 @@ export const AiReviewsShow = () => {
   );
 
   return (
-    <Show isLoading={isLoading} title="AI review">
+    <Show
+      isLoading={isLoading}
+      title="AI review"
+      goBack={false}
+      headerButtons={() => (
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => list("ai-reviews")}
+        >
+          Back to AI reviews
+        </Button>
+      )}
+    >
       {review?.result === "success" ? (
         <Tabs
           items={[
